@@ -2,9 +2,9 @@ package io.awesome.security;
 
 import io.awesome.dto.UserSessionDto;
 import io.awesome.model.CredentialModel;
-import io.awesome.model.BasicUser;
+import io.awesome.model.BaseUser;
 import io.awesome.security.authentication.CredentialDelegate;
-import io.awesome.service.BasicUserService;
+import io.awesome.service.BaseUserService;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -16,12 +16,12 @@ import java.util.Objects;
 import java.util.Optional;
 
 public class SecurityService implements AuthenticationProvider {
-  private final BasicUserService basicUserService;
+  private final BaseUserService baseUserService;
   private final CredentialDelegate credentialDelegate;
 
-  public SecurityService(BasicUserService basicUserService,
+  public SecurityService(BaseUserService baseUserService,
                          CredentialDelegate credentialDelegate) {
-    this.basicUserService = basicUserService;
+    this.baseUserService = baseUserService;
     this.credentialDelegate = credentialDelegate;
   }
 
@@ -33,9 +33,9 @@ public class SecurityService implements AuthenticationProvider {
   public Authentication authenticate(Authentication authentication) throws AuthenticationException {
     String username = authentication.getName();
     String rawPassword = authentication.getCredentials().toString();
-    Optional<? extends BasicUser> optionalUser = basicUserService.findByEmail(username);
+    Optional<? extends BaseUser> optionalUser = baseUserService.findByEmail(username);
     if (optionalUser.isPresent()) {
-      BasicUser user = optionalUser.get();
+      BaseUser user = optionalUser.get();
       if (Objects.nonNull(user.getUserStatus()) && user.getUserStatus().isEnabled()) {
         UserSessionDto dto =
             new UserSessionDto(

@@ -2,14 +2,14 @@ package io.awesome.model;
 
 import org.apache.commons.lang.StringUtils;
 
-public interface BasicUser extends CredentialModel {
+public interface BaseUser extends CredentialModel {
 
   String getId();
   String getEmail();
   String getFirstName();
   String getLastName();
-  UserStatus getUserStatus();
-  Role getRole();
+  BaseUserStatus getUserStatus();
+  BaseRole getRole();
   void setFirstTimeLoggedIn(boolean flag);
 
   default String fullName() {

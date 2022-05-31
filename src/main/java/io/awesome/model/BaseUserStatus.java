@@ -1,5 +1,5 @@
 package io.awesome.model;
 
-public interface UserStatus {
+public interface BaseUserStatus {
     boolean isEnabled();
 }

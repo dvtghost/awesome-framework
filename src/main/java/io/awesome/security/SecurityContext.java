@@ -3,8 +3,8 @@ package io.awesome.security;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import io.awesome.dto.UserSessionDto;
-import io.awesome.model.Role;
-import io.awesome.service.BasicUserService;
+import io.awesome.model.BaseRole;
+import io.awesome.service.BaseUserService;
 import io.awesome.util.SecurityUtil;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -17,10 +17,10 @@ public class SecurityContext {
     private SecurityService securityService;
 
     public SecurityContext(
-            BasicUserService basicUserService,
+            BaseUserService baseUserService,
             SecurityConfigAdapter securityConfigAdapter) {
         this.securityConfigAdapter = securityConfigAdapter;
-        this.securityService = new SecurityService(basicUserService, securityConfigAdapter.getCredentialDelegate());
+        this.securityService = new SecurityService(baseUserService, securityConfigAdapter.getCredentialDelegate());
     }
 
     public SecurityService getSecurityService() {
@@ -40,7 +40,7 @@ public class SecurityContext {
                 (UserSessionDto) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         if (user != null) {
-            UrlRoleMapping urlRoleMapping = securityConfigAdapter.getUrlRoleMapping(navigationTarget);
+            IUrlRoleMapping urlRoleMapping = securityConfigAdapter.getUrlRoleMapping(navigationTarget);
             if (urlRoleMapping != null) {
                 return SecurityUtil.getInstance().checkRole(urlRoleMapping.getRoles(), user.getRole());
             }
@@ -48,9 +48,9 @@ public class SecurityContext {
         return false;
     }
 
-    public List<Role> getRoleAccessCurrentPage(Class<? extends Component> clazz) {
-        List<Role> roles = new ArrayList<>();
-        UrlRoleMapping urlRoleMapping = securityConfigAdapter.getUrlRoleMapping(clazz);
+    public List<BaseRole> getRoleAccessCurrentPage(Class<? extends Component> clazz) {
+        List<BaseRole> roles = new ArrayList<>();
+        IUrlRoleMapping urlRoleMapping = securityConfigAdapter.getUrlRoleMapping(clazz);
         if (urlRoleMapping != null) {
             roles.addAll(urlRoleMapping.getRoles());
         }

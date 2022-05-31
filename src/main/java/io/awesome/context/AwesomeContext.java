@@ -2,7 +2,7 @@ package io.awesome.context;
 
 import io.awesome.security.SecurityConfigAdapter;
 import io.awesome.security.SecurityContext;
-import io.awesome.service.BasicUserService;
+import io.awesome.service.BaseUserService;
 import io.awesome.workflow.WorkflowContext;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -29,7 +29,7 @@ public class AwesomeContext {
     private SecurityContext initNewSecurity(ApplicationContext applicationContext) {
         try {
             SecurityConfigAdapter adapter = applicationContext.getBean(SecurityConfigAdapter.class);
-            BasicUserService userService = applicationContext.getBean(BasicUserService.class);
+            BaseUserService userService = applicationContext.getBean(BaseUserService.class);
             return new SecurityContext(userService, adapter);
         } catch (Exception e) {
             return null;

@@ -1,7 +1,7 @@
 package io.awesome.dto;
 
-import io.awesome.model.Role;
-import io.awesome.model.BasicUser;
+import io.awesome.model.BaseRole;
+import io.awesome.model.BaseUser;
 import io.awesome.util.HashUtil;
 import lombok.Getter;
 import lombok.Setter;
@@ -19,7 +19,7 @@ public class UserSessionDto extends AbstractDto implements UserDetails {
 
   /* necessary for signature signing */
   private String userId;
-  private Role role;
+  private BaseRole role;
   private String username;
 
   private Timestamp loggedInOn;
@@ -35,13 +35,13 @@ public class UserSessionDto extends AbstractDto implements UserDetails {
 
   private Boolean isFromSecureCookieParameter = false;
 
-  private BasicUser user;
+  private BaseUser user;
 
   public UserSessionDto(
       String userId,
       String username,
-      Role role,
-      BasicUser user,
+      BaseRole role,
+      BaseUser user,
       Timestamp loggedInOn,
       Timestamp lastAccessedOn,
       String hashSalt) {
