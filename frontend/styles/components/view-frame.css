@@ -1,0 +1,30 @@
+.view-frame {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 2;
+    overflow: hidden;
+}
+
+.view-frame__header {
+    z-index: 2;
+}
+
+.view-frame__wrapper {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+.view-frame__content {
+    flex: 1;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+    overflow-y: scroll;
+    padding: 20px 20px 40px;
+}
+
+.view-frame__footer {
+    z-index: 2;
+}

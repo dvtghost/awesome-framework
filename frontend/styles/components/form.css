@@ -1,0 +1,157 @@
+.form-header {
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+    background: cornflowerblue;
+    color: white;
+    padding: 10px;
+    margin-top: 20px;
+    margin-bottom: 0;
+    margin-left: -16px !important;
+    width: 104.6% !important;
+    text-transform: uppercase;
+    overflow-x: hidden;
+}
+
+.form-container {
+    padding-left: 15px;
+}
+
+.abstract-form-container {
+    width: 100%;
+}
+
+.form-group {
+    width: 100% !important;
+    background-color: white;
+}
+
+.abstract-form-group {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.head-label {
+    display: flex;
+    align-items: center;
+    width: 105% !important;
+    cursor: pointer;
+    user-select: none;
+}
+
+.abstract-head-label {
+    width: 110% !important;
+    margin-left: -31px;
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+    color: white;
+    padding: 10px;
+    margin-top: 20px;
+    margin-bottom: 0;
+    text-transform: uppercase;
+    overflow-x: hidden;
+    font-size: 16px !important;
+    font-weight: 400 !important;
+    background-color: #293C58;
+}
+
+.no-padding-left {
+    padding-left: 0 !important;
+}
+
+.no-padding-right {
+    padding-right: 0 !important;
+}
+
+.noPadding {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.control-button {
+    height: auto;
+    color: white;
+}
+
+.red-button {
+    background: #b52b27;
+    border-color: #b52b27;
+}
+
+.green-button {
+    background: #3d8b3d;
+    border-color: #3d8b3d;
+}
+
+.blue-button {
+    background: #122b40;
+    border-color: #122b40;
+}
+
+.head-icon {
+    transition: 0.5s ease;
+}
+
+.head-icon-turn {
+    transform: rotate(180deg);
+}
+
+.item-label {
+    color: #5A6676;
+    font-family: var(--lumo-font-family);
+    font-size: var(--lumo-font-size-s);
+    font-weight: 500;
+    margin-top: var(--lumo-space-m);
+    margin-left: calc(var(--lumo-border-radius-m) / 4);
+    margin-bottom: var(--lumo-space-xs);
+    transition: color 0.4s;
+    line-height: 1.333;
+}
+
+.multiselect-item {
+    margin-top: -7.5px;
+}
+
+.error > label {
+    color: var(--lumo-error-text-color);
+}
+
+.error > .error-message {
+    color: var(--lumo-error-text-color);
+    font-style: italic;
+    font-size: small;
+    display: block;
+}
+
+.error-bottom-item {
+    padding: 0 15px 15px 15px;
+    margin-top: 10px;
+    margin-bottom: 15px;
+    border: 1px solid var(--lumo-error-text-color);
+    border-radius: 4px;
+    background-color: var(--lumo-error-color-10pct);
+}
+
+.error-bottom-item .error-message {
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding-left: 10px;
+    margin-left: 15px;
+    font-size: 14px;
+    font-style: normal;
+    font-weight: bold;
+    color: var(--lumo-error-text-color);
+}
+
+.error-bottom-item .error-message::before {
+    content: var(--lumo-icons-error);
+    position: absolute;
+    top: 0;
+    right: 100%;
+    font-family: lumo-icons;
+    font-size: 22px;
+    width: 16px;
+    height: 1em;
+    line-height: 1;
+    text-align: center;
+}

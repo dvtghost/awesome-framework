@@ -1,0 +1,21 @@
+.page-button {
+    width: max-content;
+    height: 45px;
+}
+
+.page-number-button {
+    width: 45px;
+    min-width: 45px;
+    height: 45px;
+    padding: 0 !important;
+    color: #333;
+}
+
+.page-number-button:hover {
+    border: 1px solid #0a5698;
+}
+
+.page-number-button.active {
+    background-color: #0a5698;
+    color: white;
+}

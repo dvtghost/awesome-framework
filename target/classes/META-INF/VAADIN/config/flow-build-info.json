@@ -1,0 +1,15 @@
+{
+  "productionMode": false,
+  "useDeprecatedV14Bootstrapping": false,
+  "eagerServerLoad": false,
+  "npmFolder": "/Users/thaitran/Projects/da/raksa/awesome-framework",
+  "generatedFolder": "/Users/thaitran/Projects/da/raksa/awesome-framework/target/frontend",
+  "frontendFolder": "/Users/thaitran/Projects/da/raksa/awesome-framework/frontend",
+  "connect.javaSourceFolder": "/Users/thaitran/Projects/da/raksa/awesome-framework/src/main/java",
+  "connect.applicationProperties": "/Users/thaitran/Projects/da/raksa/awesome-framework/src/main/resources/application.properties",
+  "connect.openApiFile": "/Users/thaitran/Projects/da/raksa/awesome-framework/target/generated-resources/openapi.json",
+  "project.frontend.generated": "/Users/thaitran/Projects/da/raksa/awesome-framework/frontend/generated",
+  "pnpm.enable": true,
+  "require.home.node": false,
+  "build.folder": "target"
+}

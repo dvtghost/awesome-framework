@@ -1,0 +1,35 @@
+.collapse-body {
+    background-color: white;
+    margin-top: 0;
+    min-height: 85px;
+    padding: 0 16px 16px 16px;
+}
+
+.collapse-head-label {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 10px 15px;
+    margin-bottom: 0;
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+    cursor: pointer;
+    user-select: none;
+    font-size: 18px;
+    font-weight: 600;
+    color: white;
+    background-color: #293C58;
+}
+
+.message {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.head-icon {
+    transition: 0.5s ease;
+}
+
+.head-icon-turn {
+    transform: rotate(180deg);
+}

@@ -1,0 +1,23 @@
+.component-content {
+    padding: 8px 0 !important;
+    height: auto !important;
+}
+
+.header-table {
+    width: 100%;
+    padding: 10px 15px;
+    border: none;
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+    background: #293c58;
+}
+
+.header-title {
+    color: white;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.component-body {
+    background-color: white;
+}

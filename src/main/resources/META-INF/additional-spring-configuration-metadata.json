@@ -1,0 +1,14 @@
+{
+  "properties": [
+    {
+      "name": "meta.loginDescription",
+      "type": "java.lang.String",
+      "description": "Description for meta.loginDescription."
+    },
+    {
+      "name": "meta.loginTitle",
+      "type": "java.lang.String",
+      "description": "Description for meta.loginTitle."
+    }
+  ]
+}
