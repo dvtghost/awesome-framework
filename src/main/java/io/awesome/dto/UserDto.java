@@ -1,6 +1,6 @@
 package io.awesome.dto;
 
-import io.awesome.model.BasicUser;
+import io.awesome.model.BaseUser;
 import org.springframework.beans.BeanUtils;
 
 import java.time.LocalDate;
@@ -20,7 +20,7 @@ public class UserDto {
 
   private String employeeId;
 
-  public static UserDto convertToDto(BasicUser model) {
+  public static UserDto convertToDto(BaseUser model) {
     UserDto dto = new UserDto();
     BeanUtils.copyProperties(model, dto);
 
