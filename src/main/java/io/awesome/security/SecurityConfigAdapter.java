@@ -19,7 +19,7 @@ public class SecurityConfigAdapter {
         return null;
     }
 
-    public UrlRoleMapping getUrlRoleMapping(Class<? extends Component> navigationTarget) {
+    public IUrlRoleMapping getUrlRoleMapping(Class<? extends Component> navigationTarget) {
         return null;
     }
 

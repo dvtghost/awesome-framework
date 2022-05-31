@@ -4,7 +4,7 @@ import com.vaadin.flow.server.HandlerHelper;
 import com.vaadin.flow.shared.ApplicationConstants;
 import io.awesome.dto.UserSessionDto;
 import io.awesome.exception.BaseException;
-import io.awesome.model.Role;
+import io.awesome.model.BaseRole;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -56,19 +56,19 @@ public final class SecurityUtil {
         && authentication.isAuthenticated();
   }
 
-  public boolean checkRole(List<? extends Role> allowedRoles, Role role) {
+  public boolean checkRole(List<? extends BaseRole> allowedRoles, BaseRole role) {
     return allowedRoles.contains(role);
   }
 
-  public boolean isContainCurrentUserRole(Role... roles) {
+  public boolean isContainCurrentUserRole(BaseRole... roles) {
     var userSession =
         (UserSessionDto) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     if (userSession == null) return false;
-    Role role = userSession.getRole();
+    BaseRole role = userSession.getRole();
     return Arrays.asList(roles).contains(role);
   }
 
-  public boolean isNotContainCurrentUserRole(Role... roles) {
+  public boolean isNotContainCurrentUserRole(BaseRole... roles) {
     return !isContainCurrentUserRole(roles);
   }
 }
