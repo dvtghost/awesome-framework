@@ -18,13 +18,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public class RadioButtonGroup<T> extends AbstractFormElement<T, FormElement> {
+public class RadioButtonGroup<T> extends AbstractFormElement<T, SelectDto.SelectItem> {
     public RadioButtonGroup(FormLayout parentForm, ExtendedBinder<T> binder, T entity, Map<String, FormLayout.FormItem> items) {
         super(parentForm, binder, entity, items);
     }
 
     @Override
-    public Optional<Binder.Binding<T, ?>> binding(FormElement annotation, String fieldName) {
+    public Optional<Binder.Binding<T, SelectDto.SelectItem>> binding(FormElement annotation, String fieldName) {
         try {
             com.vaadin.flow.component.radiobutton.RadioButtonGroup<SelectDto.SelectItem> select = new com.vaadin.flow.component.radiobutton.RadioButtonGroup<>();
             select.setRequired(annotation.required());

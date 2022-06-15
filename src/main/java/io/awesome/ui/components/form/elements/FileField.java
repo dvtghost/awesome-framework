@@ -17,13 +17,13 @@ import org.apache.commons.lang.StringUtils;
 import java.util.Map;
 import java.util.Optional;
 
-public class FileField<T> extends AbstractFormElement<T, FormElement>{
+public class FileField<T> extends AbstractFormElement<T, Void>{
     public FileField(FormLayout parentForm, ExtendedBinder<T> binder, T entity, Map<String, FormLayout.FormItem> items) {
         super(parentForm, binder, entity, items);
     }
 
     @Override
-    public Optional<Binder.Binding<T, ?>> binding(FormElement annotation, String fieldName) {
+    public Optional<Binder.Binding<T, Void>> binding(FormElement annotation, String fieldName) {
         FlexBoxLayout wrapper = new FlexBoxLayout();
         wrapper.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
         wrapper.setFlexWrap(FlexLayout.FlexWrap.WRAP);

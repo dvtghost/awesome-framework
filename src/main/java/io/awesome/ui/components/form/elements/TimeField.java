@@ -13,13 +13,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
-public class TimeField<T> extends AbstractFormElement<T, FormElement> {
+public class TimeField<T> extends AbstractFormElement<T, LocalTime> {
     public TimeField(FormLayout parentForm, ExtendedBinder<T> binder, T entity, Map<String, FormLayout.FormItem> items) {
         super(parentForm, binder, entity, items);
     }
 
     @Override
-    public Optional<Binder.Binding<T, ?>> binding(FormElement annotation, String fieldName) {
+    public Optional<Binder.Binding<T, LocalTime>> binding(FormElement annotation, String fieldName) {
         try {
             var timeField = new TimePicker();
             timeField.setRequired(annotation.required());

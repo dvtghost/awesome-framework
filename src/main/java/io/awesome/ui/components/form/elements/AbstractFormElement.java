@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @Slf4j
-public abstract class AbstractFormElement<T, A> {
+public abstract class AbstractFormElement<T, V> {
     protected FormLayout parentForm;
     protected ExtendedBinder<T> binder;
     protected T entity;
@@ -38,5 +38,6 @@ public abstract class AbstractFormElement<T, A> {
                 e);
     }
 
-    public abstract Optional<Binder.Binding<T, ?>> binding(A annotation, String fieldName);
+    public abstract Optional<Binder.Binding<T, V>> binding(FormElement annotation, String fieldName);
+
 }

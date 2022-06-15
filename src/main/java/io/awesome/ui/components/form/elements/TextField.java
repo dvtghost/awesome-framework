@@ -14,13 +14,13 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-public class TextField<T> extends  AbstractFormElement<T, FormElement> {
+public class TextField<T> extends AbstractFormElement<T, String> {
     public TextField(FormLayout parentForm, ExtendedBinder<T> binder, T entity, Map<String, FormLayout.FormItem> items) {
         super(parentForm, binder, entity, items);
     }
 
     @Override
-    public Optional<Binder.Binding<T, ?>> binding(FormElement annotation, String fieldName) {
+    public Optional<Binder.Binding<T, String>> binding(FormElement annotation, String fieldName) {
         try {
             if (annotation.type().equals(FormElementType.PasswordField)) {
                 PasswordField formComponent = new PasswordField();
@@ -53,23 +53,6 @@ public class TextField<T> extends  AbstractFormElement<T, FormElement> {
                         .bind(
                                 (ValueProvider<T, String>) t -> (String) util.invokeGetter(t, fieldName),
                                 (com.vaadin.flow.data.binder.Setter<T, String>)
-                                        (t, s) -> {
-                                            util.invokeSetter(t, fieldName, s);
-                                        }));
-            } else if (annotation.type().equals(FormElementType.IntegerField)) {
-                IntegerField formComponent = new IntegerField();
-                formComponent.setWidthFull();
-                formComponent.setClearButtonVisible(annotation.isClearButton());
-                formComponent.setRequiredIndicatorVisible(annotation.required());
-                formComponent.setEnabled(annotation.enable());
-                var formItem = this.parentForm.addFormItem(formComponent, annotation.label());
-                UIUtil.setColSpan(annotation.colspan(), formItem);
-                items.put(fieldName, formItem);
-                return Optional.of(binder
-                        .forField(formComponent)
-                        .bind(
-                                (ValueProvider<T, Integer>) t -> (Integer) util.invokeGetter(t, fieldName),
-                                (com.vaadin.flow.data.binder.Setter<T, Integer>)
                                         (t, s) -> {
                                             util.invokeSetter(t, fieldName, s);
                                         }));
@@ -121,23 +104,6 @@ public class TextField<T> extends  AbstractFormElement<T, FormElement> {
                                             util.invokeSetter(t, fieldName, s);
                                         }));
 
-            } else if (annotation.type().equals(FormElementType.DoubleField)) {
-                NumberField formComponent = new NumberField();
-                formComponent.setWidthFull();
-                formComponent.setClearButtonVisible(annotation.isClearButton());
-                formComponent.setRequiredIndicatorVisible(annotation.required());
-                formComponent.setEnabled(annotation.enable());
-                var formItem = this.parentForm.addFormItem(formComponent, annotation.label());
-                UIUtil.setColSpan(annotation.colspan(), formItem);
-                items.put(fieldName, formItem);
-                return Optional.of(binder
-                        .forField(formComponent)
-                        .bind(
-                                (ValueProvider<T, Double>) t -> (Double) util.invokeGetter(t, fieldName),
-                                (com.vaadin.flow.data.binder.Setter<T, Double>)
-                                        (t, s) -> {
-                                            util.invokeSetter(t, fieldName, s);
-                                        }));
             } else {
                 com.vaadin.flow.component.textfield.TextField formComponent = new com.vaadin.flow.component.textfield.TextField();
                 formComponent.setWidthFull();

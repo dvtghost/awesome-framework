@@ -16,14 +16,14 @@ import java.util.Map;
 import java.util.Optional;
 
 @Slf4j
-public class SelectField<T> extends AbstractFormElement<T, FormElement> {
+public class SelectField<T> extends AbstractFormElement<T, SelectDto.SelectItem> {
 
     public SelectField(FormLayout parentForm, ExtendedBinder<T> binder, T entity, Map<String, FormLayout.FormItem> items) {
         super(parentForm, binder, entity, items);
     }
 
     @Override
-    public Optional<Binder.Binding<T, ?>> binding(FormElement annotation, String fieldName) {
+    public Optional<Binder.Binding<T, SelectDto.SelectItem>> binding(FormElement annotation, String fieldName) {
         try {
             ComboBox<SelectDto.SelectItem> select = new ComboBox<>();
             select.setWidthFull();

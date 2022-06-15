@@ -14,13 +14,13 @@ import org.apache.commons.lang.StringUtils;
 import java.util.Map;
 import java.util.Optional;
 
-public class SignatureField<T> extends AbstractFormElement<T, FormElement> {
+public class SignatureField<T> extends AbstractFormElement<T, Void> {
     public SignatureField(FormLayout parentForm, ExtendedBinder<T> binder, T entity, Map<String, FormLayout.FormItem> items) {
         super(parentForm, binder, entity, items);
     }
 
     @Override
-    public Optional<Binder.Binding<T, ?>> binding(FormElement annotation, String fieldName) {
+    public Optional<Binder.Binding<T, Void>> binding(FormElement annotation, String fieldName) {
         SignaturePad signature = new SignaturePad();
         signature.setHeight("150px");
         signature.setWidth("100%");
