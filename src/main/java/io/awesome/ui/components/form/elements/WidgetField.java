@@ -42,8 +42,4 @@ public class WidgetField<T> extends AbstractFormElement<T, Void> {
         }
         return Optional.empty();
     }
-
-
-
-
 }

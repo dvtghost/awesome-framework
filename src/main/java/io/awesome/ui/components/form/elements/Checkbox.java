@@ -19,24 +19,6 @@ public class Checkbox<T> extends AbstractHasValueFormElement<T, Boolean> {
         super(parentForm, binder, entity, items);
     }
 
-//    @Override
-//    public Optional<Binder.Binding<T, ?>> binding(FormElement annotation, String fieldName) {
-//        try {
-//            var checkbox = new com.vaadin.flow.component.checkbox.Checkbox();
-//            checkbox.setWidthFull();
-//            FormLayout.FormItem checkboxItem = this.parentForm.addFormItem(checkbox, annotation.label());
-//            items.put(fieldName, checkboxItem);
-//            return Optional.of(binder
-//                    .forField(checkbox)
-//                    .bind(
-//                            (ValueProvider<T, Boolean>) t -> (Boolean) util.invokeGetter(entity, fieldName),
-//                            gettBooleanSetter(fieldName)));
-//        } catch (Exception e) {
-//            logError(entity, annotation, fieldName, e);
-//        }
-//        return Optional.empty();
-//    }
-
     @Override
     protected HasValue<?, Boolean> buildField(FormElement annotation, String fieldName) {
         var checkbox = new com.vaadin.flow.component.checkbox.Checkbox();

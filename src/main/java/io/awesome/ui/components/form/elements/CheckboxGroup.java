@@ -1,10 +1,8 @@
 package io.awesome.ui.components.form.elements;
 
-import com.vaadin.flow.component.HasValue;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.data.binder.Binder;
-import com.vaadin.flow.data.binder.Setter;
 import com.vaadin.flow.function.ValueProvider;
 import io.awesome.ui.annotations.FormElement;
 import io.awesome.ui.binder.ExtendedBinder;
