@@ -11,13 +11,13 @@ import io.awesome.ui.util.UIUtil;
 
 import java.util.*;
 
-public class CheckboxGroup<T> extends  AbstractFormElement<T, FormElement> {
+public class CheckboxGroup<T> extends  AbstractFormElement<T, Set<SelectDto.SelectItem>> {
     public CheckboxGroup(FormLayout parentForm, ExtendedBinder<T> binder, T entity, Map<String, FormLayout.FormItem> items) {
         super(parentForm, binder, entity, items);
     }
 
     @Override
-    public Optional<Binder.Binding<T, ?>> binding(FormElement annotation, String fieldName) {
+    public Optional<Binder.Binding<T, Set<SelectDto.SelectItem>>> binding(FormElement annotation, String fieldName) {
         try {
             com.vaadin.flow.component.checkbox.CheckboxGroup<SelectDto.SelectItem> checkboxGroup = new com.vaadin.flow.component.checkbox.CheckboxGroup<>();
             checkboxGroup.setRequired(annotation.required());
@@ -50,4 +50,5 @@ public class CheckboxGroup<T> extends  AbstractFormElement<T, FormElement> {
         }
         return Optional.empty();
     }
+
 }

@@ -56,7 +56,7 @@ public class AbstractForm<T> extends FormLayout {
   @Getter @Setter private Map<String, FormItem> formItems;
   @Getter @Setter private Map<String, AbstractForm> formGroups;
   @Getter private FormControl formControl;
-  Map<FormElementType, AbstractFormElement<T, FormElement>> formElements;
+  Map<FormElementType, AbstractFormElement<T, ?>> formElements;
 
   public AbstractForm(
       Class<T> clazz,
@@ -117,7 +117,7 @@ public class AbstractForm<T> extends FormLayout {
           head.addClassNames(FORM_HEADER);
           add(head);
         }
-        Optional<AbstractFormElement<T, FormElement>> formElement;
+        Optional<AbstractFormElement<T, ?>> formElement;
         switch (annotation.type()) {
           case SelectField:
             formElement = getFormElement(annotation,
@@ -159,12 +159,25 @@ public class AbstractForm<T> extends FormLayout {
             formElement = getFormElement(annotation,
                     () -> new SignatureField<>(this, binder, entity, items ));
             break;
+          case PhoneField:
+            formElement = getFormElement(annotation,
+                    () -> new PhoneField<>(this, binder, entity, items ));
+            break;
+          case IntegerField:
+            formElement = getFormElement(annotation,
+                    () -> new IntegerField<>(this, binder, entity, items ));
+            break;
+          case DoubleField:
+            formElement = getFormElement(annotation,
+                    () -> new DoubleField<>(this, binder, entity, items ));
+            break;
           case Widget:
             WidgetField<T> widgetField = (WidgetField<T>) getFormElement(annotation,
                     () -> new WidgetField<>(this, binder, entity, items )).get();
             widgetField.setValueChangeListener(event -> this.onChange.trigger(fieldName, field, entity, formItems, this));
             formElement = Optional.of(widgetField);
             break;
+
           case PasswordField:
           default:
             formElement = getFormElement(annotation,
@@ -296,9 +309,9 @@ public class AbstractForm<T> extends FormLayout {
     return items;
   }
 
-  private Optional<AbstractFormElement<T, FormElement>> getFormElement(FormElement annotation,
-                                                                       Supplier<AbstractFormElement<T, FormElement>> initFormElement)  {
-    AbstractFormElement<T, FormElement> formElement;
+  private Optional<AbstractFormElement<T, ?>> getFormElement(FormElement annotation,
+                                                             Supplier<AbstractFormElement<T, ?>> initFormElement)  {
+    AbstractFormElement<T, ?> formElement;
     FormElementType formElementType = annotation.type();
     if (formElements.containsKey(formElementType)) {
       formElement = formElements.get(formElementType);

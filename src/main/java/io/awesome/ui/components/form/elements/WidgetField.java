@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @Slf4j
-public class WidgetField<T> extends AbstractFormElement<T, FormElement> {
+public class WidgetField<T> extends AbstractFormElement<T, Void> {
     private ComponentEventListener<AttachEvent> valueChangeListener;
 
     public WidgetField(FormLayout parentForm, ExtendedBinder<T> binder, T entity, Map<String, FormLayout.FormItem> items) {
@@ -27,7 +27,7 @@ public class WidgetField<T> extends AbstractFormElement<T, FormElement> {
     }
 
     @Override
-    public Optional<Binder.Binding<T, ?>> binding(FormElement annotation, String fieldName) {
+    public Optional<Binder.Binding<T, Void>> binding(FormElement annotation, String fieldName) {
         try {
             Component field = (Component) util.invokeGetter(entity, fieldName);
             field.addAttachListener(this.valueChangeListener);
@@ -42,8 +42,4 @@ public class WidgetField<T> extends AbstractFormElement<T, FormElement> {
         }
         return Optional.empty();
     }
-
-
-
-
 }

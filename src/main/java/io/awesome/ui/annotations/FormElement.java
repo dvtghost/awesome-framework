@@ -20,6 +20,8 @@ public @interface FormElement {
 
   boolean enable() default true;
 
+  boolean readOnly() default false;
+
   int colspan() default 2;
 
   boolean required() default false;
@@ -31,4 +33,8 @@ public @interface FormElement {
   String acceptedFileTypes() default "";
 
   boolean isRadioButtonGroupVertical() default false;
+
+  String pattern() default "";
+
+  String patternExample() default "";
 }
