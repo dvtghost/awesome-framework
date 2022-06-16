@@ -1,3 +1,7 @@
 .filter-control-layout {
   width: 100% !important;
 }
+
+.filter-control-compact {
+    margin-left: 11px !important;
+}
