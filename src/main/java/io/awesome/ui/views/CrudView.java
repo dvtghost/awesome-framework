@@ -13,16 +13,16 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.data.provider.DataProvider;
 import io.awesome.config.Constants;
-import io.awesome.exception.ValidateException;
-import io.awesome.ui.components.button.CancelButton;
-import io.awesome.ui.components.button.DeleteButton;
-import io.awesome.ui.components.button.SaveButton;
 import io.awesome.dto.FilterDto;
 import io.awesome.dto.PageSessionDto;
 import io.awesome.dto.PagingDto;
 import io.awesome.exception.BaseException;
+import io.awesome.exception.ValidateException;
 import io.awesome.ui.binder.ExtendedBinder;
 import io.awesome.ui.components.*;
+import io.awesome.ui.components.button.CancelButton;
+import io.awesome.ui.components.button.DeleteButton;
+import io.awesome.ui.components.button.SaveButton;
 import io.awesome.ui.components.collapse.Collapse;
 import io.awesome.ui.components.detailsdrawer.DetailsDrawer;
 import io.awesome.ui.components.detailsdrawer.DetailsDrawerHeader;
@@ -32,10 +32,6 @@ import io.awesome.ui.layout.size.Horizontal;
 import io.awesome.ui.layout.size.Top;
 import io.awesome.ui.models.Searchable;
 import io.awesome.ui.util.css.BoxSizing;
-import io.awesome.ui.views.Callback;
-import io.awesome.ui.views.CrudMapper;
-import io.awesome.ui.views.SelectCallback;
-import io.awesome.ui.views.SplitViewFrame;
 import io.awesome.util.FormUtil;
 import io.awesome.util.Utils;
 import lombok.Getter;
@@ -55,7 +51,7 @@ import static io.awesome.constant.SessionActions.NEW_ENTITY;
 
 @CssImport("styles/components/crud-view.css")
 public abstract class CrudView<F extends BaseFilterUI, L, E, M extends CrudMapper<L, E>>
-        extends SplitViewFrame {
+    extends SplitViewFrame {
   public static final int FIRST_PAGE_INDEX = 1;
   public static final int PAGE_LIMIT = 10;
   protected final M mapper;
@@ -72,11 +68,11 @@ public abstract class CrudView<F extends BaseFilterUI, L, E, M extends CrudMappe
   protected ExtendedBinder<F> filterFormBinder;
   protected DetailsDrawer detailsDrawer;
   protected HorizontalLayout filterWrapper;
+  FilterForm<F> filterForm;
   @Getter private String detailTitle;
   private F filterEntity;
   @Getter @Setter private FormLayout createOrUpdateForm;
   @Getter @Setter private Map<String, L> items = new HashMap<>();
-  FilterForm<F> filterForm;
 
   public CrudView(Class<F> filterClazz, Class<L> listEntity, Class<E> editEntityClazz, M mapper) {
     this.mapper = mapper;
@@ -155,7 +151,7 @@ public abstract class CrudView<F extends BaseFilterUI, L, E, M extends CrudMappe
   private void handleSessionActions() {
     try {
       PageSessionDto sessionDto =
-              (PageSessionDto) UI.getCurrent().getSession().getAttribute(getRoute());
+          (PageSessionDto) UI.getCurrent().getSession().getAttribute(getRoute());
       if (sessionDto != null) {
         switch (sessionDto.getAction()) {
           case NEW_ENTITY:
@@ -169,7 +165,7 @@ public abstract class CrudView<F extends BaseFilterUI, L, E, M extends CrudMappe
       }
     } catch (Exception e) {
       throw new BaseException(
-              String.format("Can't handle session actions %s", e.getLocalizedMessage()), e);
+          String.format("Can't handle session actions %s", e.getLocalizedMessage()), e);
     }
   }
 
@@ -199,24 +195,24 @@ public abstract class CrudView<F extends BaseFilterUI, L, E, M extends CrudMappe
     filterFormBinder = new ExtendedBinder<>();
     filterFormBinder.setBean(filterEntity);
     FilterControl<F> filterControl =
-            new FilterControl<>(
-                    filterEntity,
-                    isAbleToSaveFilter(),
-                    getAllSavedFilterNames(),
-                    this::onSaveFilter,
-                    this::onLoadFilter,
-                    this::onRemoveFilter,
-                    this::onSearch,
-                    this::onResetFilter);
+        new FilterControl<>(
+            filterEntity,
+            isAbleToSaveFilter(),
+            getAllSavedFilterNames(),
+            this::onSaveFilter,
+            this::onLoadFilter,
+            this::onRemoveFilter,
+            this::onSearch,
+            this::onResetFilter);
     filterForm =
-            new FilterForm<>(
-                    filterClazz,
-                    filterEntity,
-                    filterFormBinder,
-                    getAllSavedFilterNames(),
-                    (fieldName, value, event, items, formLayout) -> {},
-                    this::filterFormInit,
-                    filterControl);
+        new FilterForm<>(
+            filterClazz,
+            filterEntity,
+            filterFormBinder,
+            getAllSavedFilterNames(),
+            (fieldName, value, event, items, formLayout) -> {},
+            this::filterFormInit,
+            filterControl);
     filterForm.addClassNames("no-padding-left", "no-padding-right");
     return filterForm;
   }
@@ -264,8 +260,8 @@ public abstract class CrudView<F extends BaseFilterUI, L, E, M extends CrudMappe
     } catch (Exception e) {
       logger.error(String.format("Can't invoke constructor from class %s", filterClazz));
       throw new RuntimeException(
-              String.format(
-                      "Can't invoke constructor from class %s - %s", filterClazz, e.getLocalizedMessage()));
+          String.format(
+              "Can't invoke constructor from class %s - %s", filterClazz, e.getLocalizedMessage()));
     }
   }
 
@@ -285,21 +281,21 @@ public abstract class CrudView<F extends BaseFilterUI, L, E, M extends CrudMappe
     Toolbar<E> toolbar = new Toolbar<>(newButtonTitle, isAbleToCreate());
 
     toolbar.addEventListener(
-            new Callback() {
-              @Override
-              public void trigger(ComponentEvent<?> event) {
-                if (event.getSource() instanceof Button) {
-                  try {
-                    showNewEntityForm();
-                  } catch (Exception e) {
-                    throw new BaseException(
-                            String.format(
-                                    "Error when try show new entity form %s", e.getLocalizedMessage()),
-                            e);
-                  }
-                }
+        new Callback() {
+          @Override
+          public void trigger(ComponentEvent<?> event) {
+            if (event.getSource() instanceof Button) {
+              try {
+                showNewEntityForm();
+              } catch (Exception e) {
+                throw new BaseException(
+                    String.format(
+                        "Error when try show new entity form %s", e.getLocalizedMessage()),
+                    e);
               }
-            });
+            }
+          }
+        });
 
     return toolbar;
   }
@@ -347,12 +343,16 @@ public abstract class CrudView<F extends BaseFilterUI, L, E, M extends CrudMappe
 
   private Component createDetails(E entity) {
     return new EditorView.EditorViewBuilder<>(editEntityClazz)
-            .onChange(this::onFormValuesChange)
-            .onInit(this::onFormLoad)
-            .button(new SaveButton()).action(this::onSave)
-            .button(new CancelButton()).action(this::onCancel)
-            .button(new DeleteButton()).action(this::onDelete)
-            .build().create(entity, isAbleToEdit());
+        .onChange(this::onFormValuesChange)
+        .onInit(this::onFormLoad)
+        .button(new SaveButton())
+        .action(this::onSave)
+        .button(new CancelButton())
+        .action(this::onCancel)
+        .button(new DeleteButton())
+        .action(this::onDelete)
+        .build()
+        .create(entity, isAbleToEdit());
   }
 
   protected boolean isAbleToSaveFilter() {
@@ -386,11 +386,11 @@ public abstract class CrudView<F extends BaseFilterUI, L, E, M extends CrudMappe
 
   // TOTO Dang remove Form class so that we can use AbstractForm here
   protected void onFormValuesChange(
-          String fieldName,
-          Object value,
-          E editEntity,
-          Map<String, FormLayout.FormItem> items,
-          FormLayout form) {}
+      String fieldName,
+      Object value,
+      E editEntity,
+      Map<String, FormLayout.FormItem> items,
+      FormLayout form) {}
 
   protected void onFormLoad(E editEntity, Map<String, FormLayout.FormItem> items) {}
 
