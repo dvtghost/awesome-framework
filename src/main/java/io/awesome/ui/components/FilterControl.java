@@ -86,7 +86,8 @@ public class FilterControl<F> extends HorizontalLayout {
 
     if (!hasSaveFilters) {
       add(searchButton, resetButton);
-      addClassName("tiny-filter-control");
+      addClassName("text-field-custom");
+      addClassName("filter-control-compact");
     } else {
       add(filterComboBox, loadFilter, removeFilter, searchButton, resetButton);
     }

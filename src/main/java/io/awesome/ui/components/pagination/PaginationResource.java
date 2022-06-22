@@ -15,11 +15,13 @@ public class PaginationResource implements Serializable {
   private int page;
   private int limit;
   private boolean hasNext;
+  private Long total;
 
   private PaginationResource(Builder builder) {
     this.page = builder.page;
     this.limit = builder.limit;
     this.hasNext = builder.hasNext;
+    this.total = builder.total;
   }
 
   public static Builder newBuilder() {
@@ -61,6 +63,7 @@ public class PaginationResource implements Serializable {
     public boolean hasNext;
     private int page;
     private int limit;
+    private long total;
 
     private static Builder create() {
       return new Builder();
@@ -78,6 +81,11 @@ public class PaginationResource implements Serializable {
 
     public Builder setHasNext(boolean hasNext) {
       this.hasNext = hasNext;
+      return this;
+    }
+
+    public Builder setTotal(Long total) {
+      this.total = total;
       return this;
     }
 

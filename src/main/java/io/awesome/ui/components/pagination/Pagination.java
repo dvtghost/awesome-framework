@@ -129,6 +129,7 @@ public class Pagination extends VerticalLayout {
     firstButton.setEnabled(resource.hasPrevious());
     previousButton.setEnabled(resource.hasPrevious());
     nextButton.setEnabled(resource.isHasNext());
-    lastButton.setEnabled(resource.isHasNext());
+    lastButton.setEnabled(
+        resource.isHasNext() && resource.getTotal() != null && resource.getTotal() > 0);
   }
 }
