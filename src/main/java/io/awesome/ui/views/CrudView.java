@@ -38,7 +38,6 @@ import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.beanutils.ConstructorUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.jetbrains.annotations.NotNull;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -132,7 +131,6 @@ public abstract class CrudView<F extends BaseFilterUI, L, E, M extends CrudMappe
     handleSessionActions();
   }
 
-  @NotNull
   protected Component[] createViewContents() {
     this.headerComponent = createHeadComponent();
     this.contentComponents = createContents();
@@ -416,7 +414,6 @@ public abstract class CrudView<F extends BaseFilterUI, L, E, M extends CrudMappe
     showDetails(e);
   }
 
-  @NotNull
   protected SelectCallback<L> addSelectCallback() {
     return new SelectCallback<L>() {
       @Override
