@@ -13,19 +13,19 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.server.StreamResource;
+import io.awesome.config.Constants;
 import io.awesome.ui.annotations.FormElement;
 import io.awesome.ui.annotations.FormGroupElement;
 import io.awesome.ui.annotations.ValueChangeHandler;
 import io.awesome.ui.annotations.ValueInitHandler;
 import io.awesome.ui.binder.ExtendedBinder;
-import io.awesome.ui.components.form.elements.*;
-import io.awesome.ui.components.form.elements.TextField;
+import io.awesome.ui.components.form.FormElementMapping;
+import io.awesome.ui.components.form.elements.AbstractFormElement;
 import io.awesome.ui.enums.FormElementType;
 import io.awesome.ui.util.LumoStyles;
 import io.awesome.ui.util.UIUtil;
 import io.awesome.util.FormUtil;
 import io.awesome.util.SystemUtil;
-import io.awesome.config.Constants;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -35,9 +35,12 @@ import org.apache.commons.lang.StringUtils;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
-import java.util.function.Supplier;
 
 @Slf4j
 @CssImport("./styles/components/form.css")
@@ -56,7 +59,6 @@ public class AbstractForm<T> extends FormLayout {
   @Getter @Setter private Map<String, FormItem> formItems;
   @Getter @Setter private Map<String, AbstractForm> formGroups;
   @Getter private FormControl formControl;
-  Map<FormElementType, AbstractFormElement<T, ?>> formElements;
 
   public AbstractForm(
       Class<T> clazz,
@@ -104,7 +106,7 @@ public class AbstractForm<T> extends FormLayout {
   }
 
   private Map<String, FormItem> setupForm(T entity) {
-    this.formElements = new HashMap<>();
+    Map<FormElementType, AbstractFormElement<T, ?>> formElements = new HashMap<>();
     Map<String, FormItem> items = new HashMap<>();
     for (var field : getBeanType().getDeclaredFields()) {
       if (field.isAnnotationPresent(FormElement.class)) {
@@ -117,82 +119,28 @@ public class AbstractForm<T> extends FormLayout {
           head.addClassNames(FORM_HEADER);
           add(head);
         }
-        Optional<AbstractFormElement<T, ?>> formElement;
-        switch (annotation.type()) {
-          case SelectField:
-            formElement = getFormElement(annotation,
-                    () -> new SelectField<>(this, binder, entity, items ));
-            break;
-          case MultiSelectField:
-            formElement = getFormElement(annotation,
-                    () -> new MultiSelectField<>(this, binder, entity, items ));
-            break;
-          case CheckboxGroup:
-            formElement = getFormElement(annotation,
-                    () -> new CheckboxGroup<>(this, binder, entity, items ));
-            break;
-          case DateField:
-          case DateRangePicker:
-            formElement = getFormElement(annotation,
-                    () -> new DateField<>(this, binder, entity, items ));
-          case DateTimeField:
-            formElement = getFormElement(annotation,
-                    () -> new DateTimeField<>(this, binder, entity, items ));
-            break;
-          case TimeField:
-            formElement = getFormElement(annotation,
-                    () -> new TimeField<>(this, binder, entity, items ));
-            break;
-          case FileField:
-            formElement = getFormElement(annotation,
-                    () -> new FileField<>(this, binder, entity, items ));
-            break;
-          case RadioButtonGroup:
-            formElement = getFormElement(annotation,
-                    () -> new RadioButtonGroup<>(this, binder, entity, items ));
-            break;
-          case Checkbox:
-            formElement = getFormElement(annotation,
-                    () -> new Checkbox<>(this, binder, entity, items ));
-            break;
-          case SignatureField:
-            formElement = getFormElement(annotation,
-                    () -> new SignatureField<>(this, binder, entity, items ));
-            break;
-          case PhoneField:
-            formElement = getFormElement(annotation,
-                    () -> new PhoneField<>(this, binder, entity, items ));
-            break;
-          case IntegerField:
-            formElement = getFormElement(annotation,
-                    () -> new IntegerField<>(this, binder, entity, items ));
-            break;
-          case DoubleField:
-            formElement = getFormElement(annotation,
-                    () -> new DoubleField<>(this, binder, entity, items ));
-            break;
-          case Widget:
-            WidgetField<T> widgetField = (WidgetField<T>) getFormElement(annotation,
-                    () -> new WidgetField<>(this, binder, entity, items )).get();
-            widgetField.setValueChangeListener(event -> this.onChange.trigger(fieldName, field, entity, formItems, this));
-            formElement = Optional.of(widgetField);
-            break;
 
-          case PasswordField:
-          default:
-            formElement = getFormElement(annotation,
-                    () -> new TextField<>(this, binder, entity, items ));
+        FormElementType type = annotation.type();
+        AbstractFormElement<T, ?> formElement = formElements.computeIfAbsent(type, k ->  createFormElement(entity, items, k));
+        if (formElement == null) {
+          log.warn("Form element {} has not been setup for field {}.", type, fieldName);
+          break;
         }
 
-        formElement.flatMap(fe -> fe.binding(annotation, fieldName)).ifPresent(b -> {
-          this.binder.addBinding(fieldName, annotation.type(), b);
-          b.getField()
-                  .addValueChangeListener(
+        formElement
+            .binding(annotation, fieldName)
+            .ifPresent(
+                binding -> {
+                  this.binder.addBinding(fieldName, annotation.type(), binding);
+                  binding
+                      .getField()
+                      .addValueChangeListener(
                           valueChangeEvent -> {
                             this.onChange.trigger(
-                                    fieldName, valueChangeEvent.getValue(), entity, formItems, this);
+                                fieldName, valueChangeEvent.getValue(), entity, formItems, this);
                           });
-        });
+                });
+
         // Remove error when focus FormItem
         var formField = items.get(fieldName);
         formField.addClickListener(
@@ -309,17 +257,28 @@ public class AbstractForm<T> extends FormLayout {
     return items;
   }
 
-  private Optional<AbstractFormElement<T, ?>> getFormElement(FormElement annotation,
-                                                             Supplier<AbstractFormElement<T, ?>> initFormElement)  {
+  private AbstractFormElement<T, ?> createFormElement(
+      T entity, Map<String, FormItem> items, FormElementType type) {
     AbstractFormElement<T, ?> formElement;
-    FormElementType formElementType = annotation.type();
-    if (formElements.containsKey(formElementType)) {
-      formElement = formElements.get(formElementType);
-    } else {
-      formElement = initFormElement.get();
-      formElements.put(formElementType, formElement);
+    return Optional.ofNullable(FormElementMapping.retrieveByFormElementType(type))
+        .map(FormElementMapping::getFormElementClazz)
+        .map(clazz -> createInstance(entity, items, clazz))
+        .orElse(null);
+  }
+
+  @SuppressWarnings("unchecked")
+  private AbstractFormElement<T, ?> createInstance(
+      T entity, Map<String, FormItem> items, Class<? extends AbstractFormElement> clazz) {
+    Constructor<?>[] constructors = clazz.getDeclaredConstructors();
+    if (constructors.length > 1) {
+      log.error("Form element {} has more than 1 constructor", clazz);
+      throw new RuntimeException("Form element has more than 1 constructor");
     }
-    return Optional.of(formElement);
+    try {
+      return (AbstractFormElement<T, ?>) constructors[0].newInstance(this, binder, entity, items);
+    } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   public void updateFormView(List<String> fieldNames) {
