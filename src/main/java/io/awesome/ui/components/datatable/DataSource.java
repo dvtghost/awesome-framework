@@ -1,4 +1,4 @@
-package io.awesome.ui.models;
+package io.awesome.ui.components.datatable;
 
 import io.awesome.dto.PagingDto;
 import io.awesome.exception.SystemException;
@@ -10,12 +10,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
-public class DataTableSource<T> {
+public class DataSource<T> {
   private final Class<T> entityClazz;
   private final Function<Pageable, PagingDto<T>> recordsPerPageFnc;
   private final PagingDto<T> records;
 
-  public DataTableSource(
+  public DataSource(
       final Class<T> entityClazz, final Function<Pageable, PagingDto<T>> recordsPerPageFnc) {
     this.records = new PagingDto<>();
     this.entityClazz = entityClazz;

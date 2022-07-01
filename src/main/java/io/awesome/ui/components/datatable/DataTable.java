@@ -1,4 +1,4 @@
-package io.awesome.ui.components;
+package io.awesome.ui.components.datatable;
 
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.Component;
@@ -15,12 +15,13 @@ import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import io.awesome.dto.PagingDto;
+import io.awesome.ui.components.FlexBoxLayout;
+import io.awesome.ui.components.GridComponent;
 import io.awesome.ui.components.collapse.Collapse;
 import io.awesome.ui.components.pagination.Pagination;
 import io.awesome.ui.components.pagination.PaginationResource;
 import io.awesome.ui.layout.size.Bottom;
 import io.awesome.ui.layout.size.Top;
-import io.awesome.ui.models.DataTableSource;
 import io.awesome.ui.util.css.BoxSizing;
 import io.awesome.ui.views.SelectCallback;
 import io.awesome.util.Utils;
@@ -38,11 +39,15 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+/**
+ * Display data in tabular format
+ * @param <T>
+ */
 @CssImport("styles/components/data-table.css")
 public class DataTable<T> extends FlexBoxLayout {
   public static final int FIRST_PAGE_INDEX = 1;
   public static final int PAGE_LIMIT = 10;
-  private final DataTableSource<T> source;
+  private final DataSource<T> dataSource;
   private final List<Action<Set<T>>> actions;
   private Grid<T> grid;
   private Pagination pagination;
@@ -62,16 +67,68 @@ public class DataTable<T> extends FlexBoxLayout {
       final Function<Pageable, PagingDto<T>> recordsPerPageFnc,
       List<Action<Set<T>>> actions) {
     init();
-    this.source = new DataTableSource<>(entityClazz, recordsPerPageFnc);
+    this.dataSource = new DataSource<>(entityClazz, recordsPerPageFnc);
     this.actions = actions;
-    Component body = body(entityClazz);
-    Component headerControl = headerControl();
-    add(
-        Collapse.newBuilder()
-            .setTitle(title)
-            .setHeaderControl(headerControl)
-            .setComponents(body)
-            .build());
+    buildContent(entityClazz, title);
+  }
+
+  public void reload() {
+    this.resetPagination();
+    PagingDto<T> records =
+            this.dataSource.load(PageRequest.of(pagination.getPage(), pagination.getLimit()));
+    Optional.ofNullable(records.getResults()).ifPresent(this.grid::setItems);
+    this.grid.recalculateColumnWidths();
+  }
+
+  public List<T> getItems() {
+    return this.dataSource.getRecords().getResults();
+  }
+
+  public void setItems(List<T> items) {
+    this.dataSource.getRecords().setResults(items);
+    Optional.ofNullable(this.dataSource.getRecords().getResults()).ifPresent(this.grid::setItems);
+  }
+
+  public void addSelectMultiCallback(SelectCallback<Set<T>> selectMultiCallback) {
+    if (hasActions()) {
+      this.grid.addSelectionListener(
+              e -> {
+                selectMultiCallback.trigger(e.getAllSelectedItems());
+                reloadActionButton();
+              });
+    }
+  }
+
+  public void addSelectCallback(SelectCallback<T> selectCallback) {
+    if (!hasActions()) {
+      this.grid.addSelectionListener(
+              e -> e.getFirstSelectedItem().ifPresent(selectCallback::trigger));
+    }
+  }
+
+  public void setAbleToCreate(boolean ableToCreate) {
+    this.addButton.setEnabled(ableToCreate);
+    this.addButton.setVisible(ableToCreate);
+  }
+
+  public void addCreateCallback(Consumer<ClickEvent<?>> createCallBack) {
+    this.addButton.addClickListener(createCallBack::accept);
+  }
+
+  public void select(T item) {
+    this.grid.select(item);
+  }
+
+  public Pagination getPagination() {
+    return this.pagination;
+  }
+
+  public void setPageLimit(int pageLimit) {
+    this.pagination.getResource().setPage(pageLimit);
+  }
+
+  public void hidePagination(boolean hide) {
+    this.pagination.setVisible(!hide);
   }
 
   protected void init() {
@@ -79,6 +136,17 @@ public class DataTable<T> extends FlexBoxLayout {
     setBoxSizing(BoxSizing.BORDER_BOX);
     setPadding(Top.S, Bottom.M);
     setFlexDirection(FlexLayout.FlexDirection.COLUMN);
+  }
+
+  private void buildContent(Class<T> entityClazz, String title) {
+    Component body = body(entityClazz);
+    Component headerControl = headerControl();
+    add(
+            Collapse.newBuilder()
+                    .setTitle(title)
+                    .setHeaderControl(headerControl)
+                    .setComponents(body)
+                    .build());
   }
 
   protected Component body(Class<T> entityClazz) {
@@ -188,70 +256,11 @@ public class DataTable<T> extends FlexBoxLayout {
 
   protected void changePage(PaginationResource paginationResource) {
     PagingDto<T> records =
-        this.source.load(
+        this.dataSource.load(
             PageRequest.of(paginationResource.getPage(), paginationResource.getLimit()));
     this.updatePagination(records);
     this.grid.setItems(records.getResults());
     this.grid.recalculateColumnWidths();
-  }
-
-  public void reload() {
-    this.resetPagination();
-    PagingDto<T> records =
-        this.source.load(PageRequest.of(pagination.getPage(), pagination.getLimit()));
-    Optional.ofNullable(records.getResults()).ifPresent(this.grid::setItems);
-    this.grid.recalculateColumnWidths();
-  }
-
-  public List<T> getItems() {
-    return this.source.getRecords().getResults();
-  }
-
-  public void setItems(List<T> items) {
-    this.source.getRecords().setResults(items);
-    Optional.ofNullable(this.source.getRecords().getResults()).ifPresent(this.grid::setItems);
-  }
-
-  public void addSelectMultiCallback(SelectCallback<Set<T>> selectMultiCallback) {
-    if (hasActions()) {
-      this.grid.addSelectionListener(
-          e -> {
-            selectMultiCallback.trigger(e.getAllSelectedItems());
-            reloadActionButton();
-          });
-    }
-  }
-
-  public void addSelectCallback(SelectCallback<T> selectCallback) {
-    if (!hasActions()) {
-      this.grid.addSelectionListener(
-          e -> e.getFirstSelectedItem().ifPresent(selectCallback::trigger));
-    }
-  }
-
-  public void setAbleToCreate(boolean ableToCreate) {
-    this.addButton.setEnabled(ableToCreate);
-    this.addButton.setVisible(ableToCreate);
-  }
-
-  public void addCreateCallback(Consumer<ClickEvent<?>> createCallBack) {
-    this.addButton.addClickListener(createCallBack::accept);
-  }
-
-  public void select(T item) {
-    this.grid.select(item);
-  }
-
-  public Pagination getPagination() {
-    return this.pagination;
-  }
-
-  public void setPageLimit(int pageLimit) {
-    this.pagination.getResource().setPage(pageLimit);
-  }
-
-  public void hidePagination(boolean hide) {
-    this.pagination.setVisible(!hide);
   }
 
   private void resetPagination() {

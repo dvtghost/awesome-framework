@@ -23,6 +23,7 @@ import io.awesome.ui.components.*;
 import io.awesome.ui.components.button.CancelButton;
 import io.awesome.ui.components.button.DeleteButton;
 import io.awesome.ui.components.button.SaveButton;
+import io.awesome.ui.components.datatable.DataTable;
 import io.awesome.ui.components.detailsdrawer.DetailsDrawer;
 import io.awesome.ui.components.detailsdrawer.DetailsDrawerHeader;
 import io.awesome.ui.layout.size.Bottom;
