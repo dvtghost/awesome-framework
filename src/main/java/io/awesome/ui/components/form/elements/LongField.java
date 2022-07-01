@@ -13,41 +13,46 @@ import java.util.Objects;
 
 public class LongField<T> extends AbstractHasValueFormElement<T, String> {
 
-    public LongField(FormLayout parentForm, ExtendedBinder<T> binder, T entity, Map<String, FormLayout.FormItem> items) {
-        super(parentForm, binder, entity, items);
-    }
+  public LongField(
+      FormLayout parentForm,
+      ExtendedBinder<T> binder,
+      T entity,
+      Map<String, FormLayout.FormItem> items) {
+    super(parentForm, binder, entity, items);
+  }
 
-    @Override
-    protected HasValue<?, String> buildField(FormElement annotation, String fieldName) {
-        com.vaadin.flow.component.textfield.TextField formComponent = new com.vaadin.flow.component.textfield.TextField();
-        formComponent.setWidthFull();
-        formComponent.setClearButtonVisible(annotation.isClearButton());
-        formComponent.setPattern("\\d*");
-        formComponent.setPreventInvalidInput(true);
-        formComponent.setRequiredIndicatorVisible(annotation.required());
-        formComponent.setEnabled(annotation.enable());
-        return formComponent;
-    }
+  @Override
+  protected HasValue<?, String> buildField(FormElement annotation, String fieldName) {
+    com.vaadin.flow.component.textfield.TextField formComponent =
+        new com.vaadin.flow.component.textfield.TextField();
+    formComponent.setWidthFull();
+    formComponent.setClearButtonVisible(annotation.isClearButton());
+    formComponent.setPattern("\\d*");
+    formComponent.setPreventInvalidInput(true);
+    formComponent.setRequiredIndicatorVisible(annotation.required());
+    formComponent.setEnabled(annotation.enable());
+    return formComponent;
+  }
 
-    @Override
-    protected ValueProvider<T, String> bindingValueProvider(String fieldName) {
-        return t -> {
-            Long value = (Long) util.invokeGetter(t, fieldName);
-            if (Objects.isNull(value)) {
-                return "";
-            }
-            return String.valueOf(value);
-        };
-    }
+  @Override
+  protected ValueProvider<T, String> bindingValueProvider(String fieldName) {
+    return t -> {
+      Long value = (Long) util.invokeGetter(t, fieldName);
+      if (Objects.isNull(value)) {
+        return "";
+      }
+      return String.valueOf(value);
+    };
+  }
 
-    @Override
-    protected Setter<T, String> bindingSetter(String fieldName) {
-        return (t, s) -> {
-            if (StringUtils.isBlank(s)) {
-                util.invokeSetter(t, fieldName, null);
-            } else {
-                util.invokeSetter(t, fieldName, Long.parseLong(s));
-            }
-        };
-    }
+  @Override
+  protected Setter<T, String> bindingSetter(String fieldName) {
+    return (t, s) -> {
+      if (StringUtils.isBlank(s)) {
+        util.invokeSetter(t, fieldName, null);
+      } else {
+        util.invokeSetter(t, fieldName, Long.parseLong(s));
+      }
+    };
+  }
 }
