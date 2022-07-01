@@ -16,7 +16,7 @@ public class IntegerField<T> extends AbstractHasValueFormElement<T, Integer> {
     @Override
     protected HasValue<?, Integer> buildField(FormElement annotation, String fieldName) {
         com.vaadin.flow.component.textfield.IntegerField formComponent = new com.vaadin.flow.component.textfield.IntegerField();
-        formComponent.setWidthFull();;
+        formComponent.setWidthFull();
         return formComponent;
     }
 }
