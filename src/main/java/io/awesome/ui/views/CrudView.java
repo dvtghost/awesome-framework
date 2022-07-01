@@ -1,8 +1,8 @@
 package io.awesome.ui.views;
 
 import com.vaadin.flow.component.AttachEvent;
+import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dependency.CssImport;
@@ -23,10 +23,8 @@ import io.awesome.ui.components.*;
 import io.awesome.ui.components.button.CancelButton;
 import io.awesome.ui.components.button.DeleteButton;
 import io.awesome.ui.components.button.SaveButton;
-import io.awesome.ui.components.collapse.Collapse;
 import io.awesome.ui.components.detailsdrawer.DetailsDrawer;
 import io.awesome.ui.components.detailsdrawer.DetailsDrawerHeader;
-import io.awesome.ui.components.pagination.Pagination;
 import io.awesome.ui.layout.size.Bottom;
 import io.awesome.ui.layout.size.Horizontal;
 import io.awesome.ui.layout.size.Top;
@@ -41,6 +39,8 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.lang.reflect.Constructor;
 import java.util.*;
@@ -54,10 +54,11 @@ public abstract class CrudView<F extends BaseFilterUI, L, E, M extends CrudMappe
   public static final int FIRST_PAGE_INDEX = 1;
   public static final int PAGE_LIMIT = 10;
   protected final M mapper;
-  @Getter protected final Pagination pagination;
   private final Logger logger = LoggerFactory.getLogger(CrudView.class);
   private final Class<F> filterClazz;
   private final Class<E> editEntityClazz;
+  private final Class<L> listEntityClazz;
+  private final List<FilterDto> filters;
   @Getter @Setter protected GridComponent<L> grid;
   @Getter @Setter protected String tableTitle = "";
   @Getter @Setter protected String newButtonTitle;
@@ -67,6 +68,7 @@ public abstract class CrudView<F extends BaseFilterUI, L, E, M extends CrudMappe
   protected ExtendedBinder<F> filterFormBinder;
   protected DetailsDrawer detailsDrawer;
   protected HorizontalLayout filterWrapper;
+  protected DataTable<L> dataTable;
   FilterForm<F> filterForm;
   @Getter private String detailTitle;
   private F filterEntity;
@@ -76,46 +78,12 @@ public abstract class CrudView<F extends BaseFilterUI, L, E, M extends CrudMappe
   public CrudView(Class<F> filterClazz, Class<L> listEntity, Class<E> editEntityClazz, M mapper) {
     this.mapper = mapper;
     this.filterClazz = filterClazz;
+    this.listEntityClazz = listEntity;
     this.editEntityClazz = editEntityClazz;
-    this.grid = createGrid(listEntity);
-    this.pagination = Utils.createPagination(FIRST_PAGE_INDEX, PAGE_LIMIT, true);
+    this.filters = new ArrayList<>();
   }
 
   public abstract String getRoute();
-
-  public PagingDto<L> getPagingData() {
-    List<FilterDto> filters = prepareFilters(getFilterEntity());
-    PagingDto<L> pagingDto = getPagingDataWithFilters(filters);
-    updatePagination(pagingDto);
-    return pagingDto;
-  }
-
-  private void resetPagination() {
-    this.pagination.getResource().setPage(FIRST_PAGE_INDEX);
-    this.pagination.getResource().setLimit(PAGE_LIMIT);
-    this.pagination.getResource().setHasNext(true);
-  }
-
-  protected void updatePagination(PagingDto<L> pagingDto) {
-    this.pagination.getResource().setPage(pagingDto.getPageable().getPageNumber());
-    this.pagination.getResource().setLimit(pagingDto.getPageable().getPageSize());
-    this.pagination.getResource().setHasNext(pagingDto.isHasNext());
-    this.pagination.getResource().setTotal(Optional.ofNullable(pagingDto.getTotal()).orElse(0L));
-    this.pagination.updatePaginationButtonsStatus();
-  }
-
-  public abstract PagingDto<L> getPagingDataWithFilters(List<FilterDto> filters);
-
-  protected GridComponent<L> createGrid(Class<L> listEntity) {
-    GridComponent<L> grid = new GridComponent<>(listEntity);
-    grid.setAllRowsVisible(true);
-    grid.setSizeFull();
-    grid.setMultiSort(false);
-    grid.getColumns().forEach(column -> column.setAutoWidth(true));
-    grid.recalculateColumnWidths();
-    grid.addSelectListener(addSelectCallback());
-    return grid;
-  }
 
   @Override
   protected void onAttach(AttachEvent attachEvent) {
@@ -127,14 +95,13 @@ public abstract class CrudView<F extends BaseFilterUI, L, E, M extends CrudMappe
     setViewDetails(createDetailsDrawer());
     onInit();
     filter();
-    pagination.addPageChangeListener(event -> searchData(getFilterEntity()));
     handleSessionActions();
   }
 
   protected Component[] createViewContents() {
     this.headerComponent = createHeadComponent();
     this.contentComponents = createContents();
-    List<Component> viewContents = new ArrayList<>(Arrays.asList(headerComponent, createToolbar()));
+    List<Component> viewContents = new ArrayList<>(Arrays.asList(headerComponent));
     viewContents.addAll(this.contentComponents);
     return viewContents.toArray(new Component[0]);
   }
@@ -168,7 +135,7 @@ public abstract class CrudView<F extends BaseFilterUI, L, E, M extends CrudMappe
   }
 
   protected void showEditEntity(PageSessionDto sessionDto) {
-    this.grid.select(this.getItems().get((String) sessionDto.getData().get("id")));
+    this.dataTable.select(this.getItems().get((String) sessionDto.getData().get("id")));
   }
 
   private void clearSession() {
@@ -233,10 +200,9 @@ public abstract class CrudView<F extends BaseFilterUI, L, E, M extends CrudMappe
   protected abstract Set<String> getAllSavedFilterNames();
 
   protected void searchData(F filterEntity) {
-    List<FilterDto> filters = prepareFilters(filterEntity);
-    PagingDto<L> pagingDto = getPagingDataWithFilters(filters);
-    updatePagination(pagingDto);
-    setGridData(pagingDto.getResults());
+    this.filters.clear();
+    this.filters.addAll(prepareFilters(filterEntity));
+    reloadDataTable();
   }
 
   protected void resetFilter() {
@@ -275,29 +241,6 @@ public abstract class CrudView<F extends BaseFilterUI, L, E, M extends CrudMappe
     return detailsDrawerHeader;
   }
 
-  protected Component createToolbar() {
-    Toolbar<E> toolbar = new Toolbar<>(newButtonTitle, isAbleToCreate());
-
-    toolbar.addEventListener(
-        new Callback() {
-          @Override
-          public void trigger(ComponentEvent<?> event) {
-            if (event.getSource() instanceof Button) {
-              try {
-                showNewEntityForm();
-              } catch (Exception e) {
-                throw new BaseException(
-                    String.format(
-                        "Error when try show new entity form %s", e.getLocalizedMessage()),
-                    e);
-              }
-            }
-          }
-        });
-
-    return toolbar;
-  }
-
   protected void showNewEntityForm() throws Exception {
     Constructor<E> entity = editEntityClazz.getDeclaredConstructor();
     E obj = entity.newInstance();
@@ -306,14 +249,28 @@ public abstract class CrudView<F extends BaseFilterUI, L, E, M extends CrudMappe
   }
 
   protected List<Component> createContents() {
-    FlexBoxLayout content = createFlexBoxLayoutContent();
-    VerticalLayout body = new VerticalLayout();
-    body.setPadding(false);
-    body.addClassName("component-body");
-    body.add(grid, pagination);
-    content.add(Collapse.newBuilder().setTitle(getTableTitle()).setComponents(body).build());
-    return new ArrayList<>(List.of(content));
+    List<DataTable.Action<Set<L>>> actions = dataTableActions();
+    this.dataTable =
+        new DataTable<L>(listEntityClazz, getTableTitle(), this::getPagingData, actions);
+    this.dataTable.setPageLimit(PAGE_LIMIT);
+    this.dataTable.addSelectCallback(this::selectCallBack);
+    this.dataTable.addSelectMultiCallback(this::selectMultiCallBack);
+    this.dataTable.addCreateCallback(this::createCallBack);
+    this.dataTable.setAbleToCreate(isAbleToCreate());
+    return new ArrayList<>(List.of(dataTable));
   }
+
+  protected PagingDto<L> getPagingData(Pageable pageable) {
+    List<FilterDto> filters = prepareFilters(filterEntity);
+    PagingDto<L> pagingDto =
+        new PagingDto<>(
+            PageRequest.of(pageable.getPageNumber(), pageable.getPageSize()),
+            filters,
+            new ArrayList<>());
+    return getRecordPerPage(pagingDto);
+  }
+
+  protected abstract PagingDto<L> getRecordPerPage(PagingDto<L> pagingDto);
 
   protected FlexBoxLayout createFlexBoxLayoutContent() {
     FlexBoxLayout content = new FlexBoxLayout();
@@ -321,7 +278,6 @@ public abstract class CrudView<F extends BaseFilterUI, L, E, M extends CrudMappe
     content.setBoxSizing(BoxSizing.BORDER_BOX);
     content.setPadding(Horizontal.RESPONSIVE_X, Top.S, Bottom.M);
     content.setFlexDirection(FlexLayout.FlexDirection.COLUMN);
-
     return content;
   }
 
@@ -392,10 +348,6 @@ public abstract class CrudView<F extends BaseFilterUI, L, E, M extends CrudMappe
 
   protected void onFormLoad(E editEntity, Map<String, FormLayout.FormItem> items) {}
 
-  protected void setGridData(Collection<L> data) {
-    setGridData(grid, data);
-  }
-
   protected <T> void setGridData(GridComponent<T> grid, Collection<T> data) {
     grid.setDataProvider(DataProvider.ofCollection(data));
     grid.setData(data);
@@ -414,16 +366,7 @@ public abstract class CrudView<F extends BaseFilterUI, L, E, M extends CrudMappe
     showDetails(e);
   }
 
-  protected SelectCallback<L> addSelectCallback() {
-    return new SelectCallback<L>() {
-      @Override
-      public void trigger(L entity) {
-        E e = mapper.fromListToEdit(entity);
-        onPreEditPageRendering(e);
-        showDetails(e);
-      }
-    };
-  }
+  protected void selectMultiCallBack(Set<L> ls) {}
 
   protected Pair<String, F> onSaveFilter(String filterName, F filter) {
     saveFilter(filterName, filter);
@@ -443,7 +386,6 @@ public abstract class CrudView<F extends BaseFilterUI, L, E, M extends CrudMappe
   protected F onSearch() {
     try {
       this.filterFormBinder.writeBean(this.filterEntity);
-      resetPagination();
       searchData(filterEntity);
     } catch (ValidateException e) {
       var errors = e.getErrors();
@@ -462,5 +404,28 @@ public abstract class CrudView<F extends BaseFilterUI, L, E, M extends CrudMappe
   protected F onResetFilter() {
     resetFilter();
     return filterEntity;
+  }
+
+  protected void reloadDataTable() {
+    this.dataTable.reload();
+  }
+
+  protected List<DataTable.Action<Set<L>>> dataTableActions() {
+    return Collections.emptyList();
+  }
+
+  protected boolean isMultiDataTable() {
+    return false;
+  }
+
+  protected void createCallBack(ClickEvent<?> event) {
+    if (event.getSource() instanceof Button) {
+      try {
+        showNewEntityForm();
+      } catch (Exception e) {
+        throw new BaseException(
+            String.format("Error when try show new entity form %s", e.getLocalizedMessage()), e);
+      }
+    }
   }
 }
