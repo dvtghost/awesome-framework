@@ -20,6 +20,7 @@ public class Collapse extends VerticalLayout {
   private final boolean isCollapse;
   private boolean expandCollapse;
   private Span detailTitle;
+  private Component headerControl;
 
   private Collapse(Builder builder) {
     setPadding(false);
@@ -30,6 +31,7 @@ public class Collapse extends VerticalLayout {
     this.isCollapse = builder.isCollapse;
     this.isDefaultCollapse = builder.isDefaultCollapse;
     this.expandCollapse = !isDefaultCollapse;
+    this.headerControl = builder.headerControl;
     createContent(builder.components);
   }
 
@@ -73,11 +75,28 @@ public class Collapse extends VerticalLayout {
       body.getStyle().set("display", "block");
     }
 
+
     detailTitle = new Span();
     detailTitle.setText(title);
     detailTitle.getStyle().set("color", "white");
-    header.getStyle().set("background", "#293C58");
-    header.add(detailTitle);
+    if (headerControl != null) {
+      HorizontalLayout titleLayout = new HorizontalLayout();
+      titleLayout.getStyle().set("background", "#293C58");
+      titleLayout.add(detailTitle);
+      titleLayout.setWidth("50%");
+
+      HorizontalLayout controlLayout = new HorizontalLayout();
+      controlLayout.add(headerControl);
+      controlLayout.setJustifyContentMode(JustifyContentMode.END);
+      controlLayout.setWidth("50%");
+
+      header.add(titleLayout, controlLayout);
+      header.setWidthFull();
+    } else {
+
+      header.getStyle().set("background", "#293C58");
+      header.add(detailTitle);
+    }
 
     add(header, body);
   }
@@ -91,6 +110,7 @@ public class Collapse extends VerticalLayout {
   @NoArgsConstructor
   public static class Builder {
     private String title;
+    private Component headerControl;
     private boolean isDefaultCollapse;
     private boolean isCollapse;
     private Component[] components;
@@ -105,6 +125,11 @@ public class Collapse extends VerticalLayout {
       } else {
         this.title = title;
       }
+      return this;
+    }
+
+    public Builder setHeaderControl(Component headerControl) {
+      this.headerControl = headerControl;
       return this;
     }
 
