@@ -7,7 +7,6 @@ import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Main;
-import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.router.AfterNavigationEvent;
 import com.vaadin.flow.router.AfterNavigationObserver;
 import com.vaadin.flow.router.RouterLayout;
@@ -22,6 +21,7 @@ import io.awesome.ui.components.navigation.drawer.NaviItem;
 import io.awesome.ui.util.UIUtil;
 import io.awesome.ui.util.css.Display;
 import io.awesome.ui.util.css.Overflow;
+import io.awesome.util.NotificationUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,7 +66,7 @@ public abstract class SidebarLayout extends FlexBoxLayout
             (ErrorHandler)
                 errorEvent -> {
                   log.error("Uncaught UI exception", errorEvent.getThrowable());
-                  Notification.show(
+                  NotificationUtil.error(
                       "We are sorry, but an internal error occurred: "
                           + errorEvent.getThrowable().getMessage());
                 });
