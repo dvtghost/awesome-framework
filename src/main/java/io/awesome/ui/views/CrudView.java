@@ -17,6 +17,7 @@ import io.awesome.dto.FilterDto;
 import io.awesome.dto.PageSessionDto;
 import io.awesome.dto.PagingDto;
 import io.awesome.exception.BaseException;
+import io.awesome.exception.SystemException;
 import io.awesome.exception.ValidateException;
 import io.awesome.ui.binder.ExtendedBinder;
 import io.awesome.ui.components.*;
@@ -32,6 +33,7 @@ import io.awesome.ui.layout.size.Top;
 import io.awesome.ui.models.Searchable;
 import io.awesome.ui.util.css.BoxSizing;
 import io.awesome.util.FormUtil;
+import io.awesome.util.NotificationUtil;
 import io.awesome.util.Utils;
 import lombok.Getter;
 import lombok.Setter;
@@ -301,11 +303,19 @@ public abstract class CrudView<F extends BaseFilterUI, L, E, M extends CrudMappe
         .onChange(this::onFormValuesChange)
         .onInit(this::onFormLoad)
         .button(new SaveButton())
-        .action(this::onSave)
+        .action(
+            e -> {
+              this.onSave(e);
+              this.onPostSave(e);
+            })
         .button(new CancelButton())
         .action(this::onCancel)
         .button(new DeleteButton())
-        .action(this::onDelete)
+        .action(
+            e -> {
+              this.onDelete(e);
+              this.onPostDelete(e);
+            })
         .build()
         .create(entity, isAbleToEdit());
   }
@@ -321,6 +331,14 @@ public abstract class CrudView<F extends BaseFilterUI, L, E, M extends CrudMappe
   public abstract void onDelete(E entity);
 
   public abstract void onCancel();
+
+  protected void onPostSave(E e) {
+    NotificationUtil.success("Saved successfully");
+  }
+
+  protected void onPostDelete(E e) {
+    NotificationUtil.success("Deleted Successfully");
+  }
 
   public abstract void onValidate(E entity);
 
@@ -394,6 +412,7 @@ public abstract class CrudView<F extends BaseFilterUI, L, E, M extends CrudMappe
       logger.error(Constants.VALIDATE_EXCEPTION_PREFIX, e);
     } catch (Exception e) {
       logger.error(Constants.EXCEPTION_PREFIX, e);
+      throw new SystemException("Cannot search " + e.getMessage());
     }
     return filterEntity;
   }
@@ -413,10 +432,6 @@ public abstract class CrudView<F extends BaseFilterUI, L, E, M extends CrudMappe
 
   protected List<DataTable.Action<Set<L>>> dataTableActions() {
     return Collections.emptyList();
-  }
-
-  protected boolean isMultiDataTable() {
-    return false;
   }
 
   protected void createCallBack(ClickEvent<?> event) {
