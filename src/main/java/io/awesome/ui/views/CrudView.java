@@ -252,7 +252,7 @@ public abstract class CrudView<F extends BaseFilterUI, L, E, M extends CrudMappe
   }
 
   protected List<Component> createContents() {
-    List<DataTable.Action<Set<L>>> actions = dataTableActions();
+    List<DataTable.Action<L>> actions = dataTableActions();
     this.dataTable =
         new DataTable<L>(listEntityClazz, getTableTitle(), this::getPagingData, actions);
     this.dataTable.setPageLimit(PAGE_LIMIT);
@@ -430,7 +430,7 @@ public abstract class CrudView<F extends BaseFilterUI, L, E, M extends CrudMappe
     this.dataTable.reload();
   }
 
-  protected List<DataTable.Action<Set<L>>> dataTableActions() {
+  protected List<DataTable.Action<L>> dataTableActions() {
     return Collections.emptyList();
   }
 
