@@ -14,7 +14,7 @@ public class NotificationUtil {
   }
 
   public static void error(String message) {
-    show(message, NotificationVariant.LUMO_ERROR);
+    show(message, 10000, Notification.Position.TOP_END, NotificationVariant.LUMO_ERROR);
   }
 
   public static void show(String message) {
