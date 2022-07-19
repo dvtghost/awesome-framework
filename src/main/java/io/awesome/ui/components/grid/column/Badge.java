@@ -1,28 +1,27 @@
-package io.awesome.ui.components.common;
+package io.awesome.ui.components.grid.column;
 
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import io.awesome.enums.IAttributeEnum;
-import io.awesome.ui.components.Badge;
 import io.awesome.ui.components.FlexBoxLayout;
 import io.awesome.ui.util.UIUtil;
 import org.apache.commons.lang.StringUtils;
 
-public class EnumBadge extends FlexBoxLayout {
+public class Badge extends FlexBoxLayout {
 
-    public <X, T> EnumBadge(IAttributeEnum<X, T> attributeEnum) {
+    public <X, T> Badge(IAttributeEnum<X, T> attributeEnum) {
         super();
         this.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
         this.setFlexWrap(FlexLayout.FlexWrap.WRAP);
         this.add(buildBadge(attributeEnum));
     }
 
-    private <X, T> Badge buildBadge(IAttributeEnum<X, T> attributeEnum) {
-        Badge badge;
+    private <X, T> io.awesome.ui.components.Badge buildBadge(IAttributeEnum<X, T> attributeEnum) {
+        io.awesome.ui.components.Badge badge;
         if (StringUtils.isNotBlank(attributeEnum.getLabel())) {
-            badge = new Badge(attributeEnum.getLabel());
+            badge = new io.awesome.ui.components.Badge(attributeEnum.getLabel());
         } else {
-            badge = new Badge(attributeEnum.getName());
+            badge = new io.awesome.ui.components.Badge(attributeEnum.getName());
         }
 
         if (StringUtils.isNotBlank(attributeEnum.getColor())) {

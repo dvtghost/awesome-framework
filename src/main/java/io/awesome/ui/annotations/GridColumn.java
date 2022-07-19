@@ -23,4 +23,6 @@ public @interface GridColumn {
   boolean frozen() default false;
 
   ColumnTextAlign textAlign() default ColumnTextAlign.START;
+
+  boolean selectable() default false;
 }

@@ -1,6 +1,7 @@
 package io.awesome.ui.components.button;
 
 import com.vaadin.flow.component.button.Button;
+import io.awesome.exception.SystemException;
 import io.awesome.exception.ValidateException;
 import io.awesome.ui.components.AbstractForm;
 import io.awesome.ui.components.IFormAction;
@@ -33,6 +34,7 @@ public class SaveButton implements ActionButton {
             logger.error(Constants.VALIDATE_EXCEPTION_PREFIX, e);
           } catch (Exception e) {
             logger.error(Constants.EXCEPTION_PREFIX, e);
+            throw new SystemException(e.getMessage(), e.getCause());
           }
         });
   }

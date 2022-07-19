@@ -41,6 +41,7 @@ import java.util.function.Predicate;
 
 /**
  * Display data in tabular format
+ *
  * @param <T>
  */
 @CssImport("styles/components/data-table.css")
@@ -48,8 +49,8 @@ public class DataTable<T> extends FlexBoxLayout {
   public static final int FIRST_PAGE_INDEX = 1;
   public static final int PAGE_LIMIT = 10;
   private final DataSource<T> dataSource;
-  private final List<Action<Set<T>>> actions;
-  private Grid<T> grid;
+  private final List<Action<T>> actions;
+  private GridComponent<T> grid;
   private Pagination pagination;
   private MenuBar menuActionBar;
   private Button addButton;
@@ -65,7 +66,7 @@ public class DataTable<T> extends FlexBoxLayout {
       Class<T> entityClazz,
       String title,
       final Function<Pageable, PagingDto<T>> recordsPerPageFnc,
-      List<Action<Set<T>>> actions) {
+      List<Action<T>> actions) {
     init();
     this.dataSource = new DataSource<>(entityClazz, recordsPerPageFnc);
     this.actions = actions;
@@ -75,7 +76,7 @@ public class DataTable<T> extends FlexBoxLayout {
   public void reload() {
     this.resetPagination();
     PagingDto<T> records =
-            this.dataSource.load(PageRequest.of(pagination.getPage(), pagination.getLimit()));
+        this.dataSource.load(PageRequest.of(pagination.getPage(), pagination.getLimit()));
     Optional.ofNullable(records.getResults()).ifPresent(this.grid::setItems);
     this.grid.recalculateColumnWidths();
   }
@@ -92,18 +93,15 @@ public class DataTable<T> extends FlexBoxLayout {
   public void addSelectMultiCallback(SelectCallback<Set<T>> selectMultiCallback) {
     if (hasActions()) {
       this.grid.addSelectionListener(
-              e -> {
-                selectMultiCallback.trigger(e.getAllSelectedItems());
-                reloadActionButton();
-              });
+          e -> {
+            selectMultiCallback.trigger(e.getAllSelectedItems());
+            reloadActionButton();
+          });
     }
   }
 
   public void addSelectCallback(SelectCallback<T> selectCallback) {
-    if (!hasActions()) {
-      this.grid.addSelectionListener(
-              e -> e.getFirstSelectedItem().ifPresent(selectCallback::trigger));
-    }
+    this.grid.addSelectListener(selectCallback);
   }
 
   public void setAbleToCreate(boolean ableToCreate) {
@@ -142,11 +140,11 @@ public class DataTable<T> extends FlexBoxLayout {
     Component body = body(entityClazz);
     Component headerControl = headerControl();
     add(
-            Collapse.newBuilder()
-                    .setTitle(title)
-                    .setHeaderControl(headerControl)
-                    .setComponents(body)
-                    .build());
+        Collapse.newBuilder()
+            .setTitle(title)
+            .setHeaderControl(headerControl)
+            .setComponents(body)
+            .build());
   }
 
   protected Component body(Class<T> entityClazz) {
@@ -214,12 +212,25 @@ public class DataTable<T> extends FlexBoxLayout {
     SubMenu subMenu = item.getSubMenu();
     subMenu.removeAll();
     if (hasActions()) {
-      for (Action<Set<T>> action : actions) {
-        ComponentEventListener<ClickEvent<MenuItem>> listener =
-            e -> action.trigger.accept(this.grid.getSelectedItems());
-        subMenu
-            .addItem(action.label, listener)
-            .setEnabled(action.enable.test(this.grid.getSelectedItems()));
+      for (Action<T> action : actions) {
+        if (action.triggerSingleItem != null) {
+          this.grid.getSelectedItems().stream()
+              .findFirst()
+              .ifPresent(
+                  i -> {
+                    ComponentEventListener<ClickEvent<MenuItem>> listener =
+                        e -> action.triggerSingleItem.accept(i);
+                    subMenu
+                        .addItem(action.label, listener)
+                        .setEnabled(action.enableSingleItem.test(i));
+                  });
+        } else {
+          ComponentEventListener<ClickEvent<MenuItem>> listener =
+              e -> action.triggerMultiItem.accept(this.grid.getSelectedItems());
+          subMenu
+              .addItem(action.label, listener)
+              .setEnabled(action.enableMultiItem.test(this.grid.getSelectedItems()));
+        }
       }
     } else {
       subMenu.addItem("No available").setEnabled(false);
@@ -230,7 +241,7 @@ public class DataTable<T> extends FlexBoxLayout {
     this.menuActionBar.getItems().forEach(this::addAction);
   }
 
-  protected Grid<T> createGrid(Class<T> entity) {
+  protected GridComponent<T> createGrid(Class<T> entity) {
     GridComponent<T> grid = new GridComponent<>(entity);
     if (hasActions()) {
       grid.setSelectionMode(Grid.SelectionMode.MULTI);
@@ -282,7 +293,19 @@ public class DataTable<T> extends FlexBoxLayout {
   @AllArgsConstructor
   public static class Action<E> {
     private String label;
-    private Consumer<E> trigger;
-    private Predicate<E> enable;
+    private Consumer<Set<E>> triggerMultiItem;
+    private Consumer<E> triggerSingleItem;
+    private Predicate<Set<E>> enableMultiItem;
+    private Predicate<E> enableSingleItem;
+
+    public static <E> Action<E> singleItem(
+        String label, Consumer<E> triggerSingleItem, Predicate<E> enableSingleItem) {
+      return new Action<>(label, null, triggerSingleItem, null, enableSingleItem);
+    }
+
+    public static <E> Action<E> multiItem(
+        String label, Consumer<Set<E>> triggerMultiItem, Predicate<Set<E>> enableMultiItem) {
+      return new Action<>(label, triggerMultiItem, null, enableMultiItem, null);
+    }
   }
 }

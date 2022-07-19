@@ -18,6 +18,7 @@ import io.awesome.ui.components.navigation.bar.AppBar;
 import io.awesome.ui.components.navigation.bar.TabBar;
 import io.awesome.ui.components.navigation.drawer.NaviDrawer;
 import io.awesome.ui.components.navigation.drawer.NaviItem;
+import io.awesome.ui.errors.CustomErrorHandler;
 import io.awesome.ui.util.UIUtil;
 import io.awesome.ui.util.css.Display;
 import io.awesome.ui.util.css.Overflow;
@@ -62,14 +63,7 @@ public abstract class SidebarLayout extends FlexBoxLayout
   @Autowired
   public SidebarLayout() {
     VaadinSession.getCurrent()
-        .setErrorHandler(
-            (ErrorHandler)
-                errorEvent -> {
-                  log.error("Uncaught UI exception", errorEvent.getThrowable());
-                  NotificationUtil.error(
-                      "We are sorry, but an internal error occurred: "
-                          + errorEvent.getThrowable().getMessage());
-                });
+        .setErrorHandler(new CustomErrorHandler());
 
     addClassName(CLASS_NAME);
     setFlexDirection(FlexDirection.COLUMN);
