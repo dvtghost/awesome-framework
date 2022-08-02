@@ -24,6 +24,7 @@ public class DataSource<T> {
 
   public PagingDto<T> load(final Pageable pageable) {
     PagingDto<T> results = recordsPerPageFnc.apply(pageable);
+    records.setHasNext(results.isHasNext());
     records.setPageable(pageable);
     List<T> entities = new ArrayList<>();
     for (T result : results.getResults()) {
