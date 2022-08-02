@@ -95,11 +95,7 @@ public class FilterControl<F> extends HorizontalLayout {
 
   private void buildResetBtn() {
     resetButton = createButton(null, "Reset", new String[] {"blue-button", "reset-button"});
-    resetButton.addClickListener(
-        event -> {
-          this.onFilterReset.execute();
-          this.onFilterSearch.execute();
-        });
+    resetButton.addClickListener(e -> this.onFilterReset.execute());
   }
 
   private void buildSearchBtn() {
