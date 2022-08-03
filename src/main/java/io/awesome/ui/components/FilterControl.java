@@ -1,5 +1,6 @@
 package io.awesome.ui.components;
 
+import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.Shortcuts;
 import com.vaadin.flow.component.Text;
@@ -95,14 +96,20 @@ public class FilterControl<F> extends HorizontalLayout {
 
   private void buildResetBtn() {
     resetButton = createButton(null, "Reset", new String[] {"blue-button", "reset-button"});
-    resetButton.addClickListener(e -> this.onFilterReset.execute());
+    resetButton.addClickListener(e -> avoidDoubleClick(e, onFilterReset));
   }
 
   private void buildSearchBtn() {
     searchButton =
         createButton(
             new Icon(VaadinIcon.SEARCH), "Search", new String[] {"green-button", "search-button"});
-    searchButton.addClickListener(e -> onFilterSearch.execute());
+    searchButton.addClickListener(e -> avoidDoubleClick(e, onFilterSearch));
+  }
+
+  private void avoidDoubleClick(ClickEvent<Button> buttonEvent,  Action<F> action) {
+      if (buttonEvent.getClickCount() == 1) {
+          action.execute();
+      }
   }
 
   private void buildRemoveBtn() {
