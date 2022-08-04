@@ -2,6 +2,7 @@ package io.awesome.ui.components.form.elements;
 
 import com.vaadin.flow.component.HasValue;
 import com.vaadin.flow.component.formlayout.FormLayout;
+import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.Setter;
 import com.vaadin.flow.function.ValueProvider;
 import io.awesome.ui.annotations.FormElement;
@@ -54,5 +55,24 @@ public class LongField<T> extends AbstractHasValueFormElement<T, String> {
         util.invokeSetter(t, fieldName, Long.parseLong(s));
       }
     };
+  }
+
+
+
+  @Override
+  protected Binder.BindingBuilder<T, String> validate(
+          FormElement annotation, Binder.BindingBuilder<T, String> bindingBuilder) {
+    bindingBuilder = super.validate(annotation, bindingBuilder);
+    if (annotation.min() != Long.MIN_VALUE) {
+      bindingBuilder.withValidator(
+              value -> Long.parseLong(value) >= annotation.min(), "Must be greater than or equal to " + annotation.min());
+    }
+
+    if (annotation.max() != Long.MAX_VALUE) {
+      bindingBuilder.withValidator(
+              value -> Long.parseLong(value) <= annotation.max(), "Must be less than or equal to " + annotation.max());
+    }
+
+    return bindingBuilder;
   }
 }
