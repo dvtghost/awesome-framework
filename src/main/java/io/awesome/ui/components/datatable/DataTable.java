@@ -15,6 +15,8 @@ import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import io.awesome.dto.PagingDto;
+import io.awesome.service.TracingService;
+import io.awesome.ui.annotations.Trace;
 import io.awesome.ui.components.FlexBoxLayout;
 import io.awesome.ui.components.GridComponent;
 import io.awesome.ui.components.collapse.Collapse;
@@ -28,13 +30,16 @@ import io.awesome.util.Utils;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.commons.beanutils.BeanUtils;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedType;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -50,6 +55,7 @@ public class DataTable<T> extends FlexBoxLayout {
   public static final int PAGE_LIMIT = 10;
   private final DataSource<T> dataSource;
   private final List<Action<T>> actions;
+  private final TracingService tracingService;
   private GridComponent<T> grid;
   private Pagination pagination;
   private MenuBar menuActionBar;
@@ -59,18 +65,28 @@ public class DataTable<T> extends FlexBoxLayout {
       Class<T> entityClazz,
       String title,
       final Function<Pageable, PagingDto<T>> recordsPerPageFnc) {
-    this(entityClazz, title, recordsPerPageFnc, new ArrayList<>());
+    this(entityClazz, title, recordsPerPageFnc, new ArrayList<>(), null);
+  }
+
+  public DataTable(
+          Class<T> entityClazz,
+          String title,
+          final Function<Pageable, PagingDto<T>> recordsPerPageFnc, List<Action<T>> actions) {
+    this(entityClazz, title, recordsPerPageFnc, actions, null);
   }
 
   public DataTable(
       Class<T> entityClazz,
       String title,
       final Function<Pageable, PagingDto<T>> recordsPerPageFnc,
-      List<Action<T>> actions) {
+      List<Action<T>> actions,
+      TracingService tracingService) {
     init();
     this.dataSource = new DataSource<>(entityClazz, recordsPerPageFnc);
     this.actions = actions;
+    this.tracingService = tracingService;
     buildContent(entityClazz, title);
+
   }
 
   public void reload() {
@@ -219,7 +235,35 @@ public class DataTable<T> extends FlexBoxLayout {
               .ifPresent(
                   i -> {
                     ComponentEventListener<ClickEvent<MenuItem>> listener =
-                        e -> action.triggerSingleItem.accept(i);
+                        e -> {
+                          T before = null;
+                          try {
+                            before = (T) BeanUtils.cloneBean(i);
+                          } catch (IllegalAccessException
+                              | InstantiationException
+                              | InvocationTargetException
+                              | NoSuchMethodException ex) {
+                            System.out.println(ex);
+                          }
+                          T modifiedItem = action.triggerSingleItem.apply(i);
+
+                          Map<String, String> changedValues;
+                          if (before != null) {
+                            changedValues = getDifference(before, modifiedItem);
+                          } else {
+                            changedValues = new HashMap<>();
+                          }
+                          Class<?> entityClazz = i.getClass();
+                          for (Annotation annotation : entityClazz.getDeclaredAnnotations()) {
+                            if (annotation.annotationType() == Trace.class) {
+                              Trace trace = (Trace) annotation;
+                              tracingService.trace(
+                                      trace.name() + "_" + action.label, changedValues);
+                              break;
+                            }
+                          }
+                          this.grid.setItems(modifiedItem);
+                        };
                     subMenu
                         .addItem(action.label, listener)
                         .setEnabled(action.enableSingleItem.test(i));
@@ -235,6 +279,27 @@ public class DataTable<T> extends FlexBoxLayout {
     } else {
       subMenu.addItem("No available").setEnabled(false);
     }
+  }
+
+  private static Map<String, String> getDifference(Object before, Object after) {
+    Map<String, String> values = new HashMap<>();
+    for (Field field : before.getClass().getDeclaredFields()) {
+      field.setAccessible(true);
+      Object valueBefore;
+      Object valueAfter;
+      try {
+        valueBefore = field.get(before);
+        valueAfter = field.get(after);
+        if (valueBefore != null && valueAfter != null) {
+          if (!Objects.equals(valueBefore, valueAfter)) {
+            values.put(field.getName(), valueBefore + " -> " + valueAfter);
+          }
+        }
+      } catch (IllegalAccessException e) {
+        System.out.println(e);
+      }
+    }
+    return values;
   }
 
   private void reloadActionButton() {
@@ -294,12 +359,12 @@ public class DataTable<T> extends FlexBoxLayout {
   public static class Action<E> {
     private String label;
     private Consumer<Set<E>> triggerMultiItem;
-    private Consumer<E> triggerSingleItem;
+    private Function<E, E> triggerSingleItem;
     private Predicate<Set<E>> enableMultiItem;
     private Predicate<E> enableSingleItem;
 
     public static <E> Action<E> singleItem(
-        String label, Consumer<E> triggerSingleItem, Predicate<E> enableSingleItem) {
+        String label, Function<E, E> triggerSingleItem, Predicate<E> enableSingleItem) {
       return new Action<>(label, null, triggerSingleItem, null, enableSingleItem);
     }
 

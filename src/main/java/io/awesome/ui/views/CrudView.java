@@ -19,6 +19,7 @@ import io.awesome.dto.PagingDto;
 import io.awesome.exception.BaseException;
 import io.awesome.exception.SystemException;
 import io.awesome.exception.ValidateException;
+import io.awesome.service.TracingService;
 import io.awesome.ui.binder.ExtendedBinder;
 import io.awesome.ui.components.*;
 import io.awesome.ui.components.button.CancelButton;
@@ -72,18 +73,24 @@ public abstract class CrudView<F extends BaseFilterUI, L, E, M extends CrudMappe
   protected DetailsDrawer detailsDrawer;
   protected HorizontalLayout filterWrapper;
   protected DataTable<L> dataTable;
+  protected TracingService tracingService;
   FilterForm<F> filterForm;
   @Getter private String detailTitle;
   private F filterEntity;
   @Getter @Setter private FormLayout createOrUpdateForm;
   @Getter @Setter private Map<String, L> items = new HashMap<>();
 
-  public CrudView(Class<F> filterClazz, Class<L> listEntity, Class<E> editEntityClazz, M mapper) {
+  public CrudView(Class<F> filterClazz, Class<L> listEntity, Class<E> editEntityClazz, M mapper, TracingService tracingService) {
     this.mapper = mapper;
     this.filterClazz = filterClazz;
     this.listEntityClazz = listEntity;
     this.editEntityClazz = editEntityClazz;
     this.filters = new ArrayList<>();
+    this.tracingService = tracingService;
+  }
+
+  public CrudView(Class<F> filterClazz, Class<L> listEntity, Class<E> editEntityClazz, M mapper) {
+    this(filterClazz, listEntity, editEntityClazz, mapper, null);
   }
 
   public abstract String getRoute();
@@ -254,7 +261,7 @@ public abstract class CrudView<F extends BaseFilterUI, L, E, M extends CrudMappe
   protected List<Component> createContents() {
     List<DataTable.Action<L>> actions = dataTableActions();
     this.dataTable =
-        new DataTable<L>(listEntityClazz, getTableTitle(), this::getPagingData, actions);
+        new DataTable<L>(listEntityClazz, getTableTitle(), this::getPagingData, actions, tracingService);
     this.dataTable.setPageLimit(PAGE_LIMIT);
     this.dataTable.addSelectCallback(this::selectCallBack);
     this.dataTable.addSelectMultiCallback(this::selectMultiCallBack);
