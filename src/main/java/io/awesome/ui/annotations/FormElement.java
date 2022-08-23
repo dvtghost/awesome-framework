@@ -37,4 +37,8 @@ public @interface FormElement {
   String pattern() default "";
 
   String patternExample() default "";
+
+  long min() default Long.MIN_VALUE;
+
+  long max() default Long.MAX_VALUE;
 }

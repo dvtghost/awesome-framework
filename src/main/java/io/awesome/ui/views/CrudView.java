@@ -430,7 +430,14 @@ public abstract class CrudView<F extends BaseFilterUI, L, E, M extends CrudMappe
 
   protected F onResetFilter() {
     resetFilter();
+    if (isSearchOnReset()) {
+      onSearch();
+    }
     return filterEntity;
+  }
+
+  protected boolean isSearchOnReset() {
+    return true;
   }
 
   protected void reloadDataTable() {

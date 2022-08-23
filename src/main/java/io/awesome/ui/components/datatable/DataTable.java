@@ -93,7 +93,15 @@ public class DataTable<T> extends FlexBoxLayout {
     this.resetPagination();
     PagingDto<T> records =
         this.dataSource.load(PageRequest.of(pagination.getPage(), pagination.getLimit()));
-    Optional.ofNullable(records.getResults()).ifPresent(this.grid::setItems);
+    Optional.ofNullable(records.getResults())
+        .ifPresent(
+            results -> {
+              this.grid.setItems(results);
+              // auto-select if only one item
+              if (results.size() == 1 && hasActions()) {
+                this.grid.select(results.get(0));
+              }
+            });
     this.grid.recalculateColumnWidths();
   }
 
