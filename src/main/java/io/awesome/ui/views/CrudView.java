@@ -19,6 +19,7 @@ import io.awesome.dto.PagingDto;
 import io.awesome.exception.BaseException;
 import io.awesome.exception.SystemException;
 import io.awesome.exception.ValidateException;
+import io.awesome.helper.TracingHelper;
 import io.awesome.service.TracingService;
 import io.awesome.ui.binder.ExtendedBinder;
 import io.awesome.ui.components.*;
@@ -33,6 +34,7 @@ import io.awesome.ui.layout.size.Horizontal;
 import io.awesome.ui.layout.size.Top;
 import io.awesome.ui.models.Searchable;
 import io.awesome.ui.util.css.BoxSizing;
+import io.awesome.util.DeepCopyBeanUtils;
 import io.awesome.util.FormUtil;
 import io.awesome.util.NotificationUtil;
 import io.awesome.util.Utils;
@@ -47,7 +49,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static io.awesome.constant.SessionActions.EDIT_ENTITY;
 import static io.awesome.constant.SessionActions.NEW_ENTITY;
@@ -60,7 +64,7 @@ public abstract class CrudView<F extends BaseFilterUI, L, E, M extends CrudMappe
   protected final M mapper;
   private final Logger logger = LoggerFactory.getLogger(CrudView.class);
   private final Class<F> filterClazz;
-  private final Class<E> editEntityClazz;
+  protected final Class<E> editEntityClazz;
   private final Class<L> listEntityClazz;
   private final List<FilterDto> filters;
   @Getter @Setter protected GridComponent<L> grid;
@@ -79,6 +83,7 @@ public abstract class CrudView<F extends BaseFilterUI, L, E, M extends CrudMappe
   private F filterEntity;
   @Getter @Setter private FormLayout createOrUpdateForm;
   @Getter @Setter private Map<String, L> items = new HashMap<>();
+  private E snapshotEntity;
 
   public CrudView(Class<F> filterClazz, Class<L> listEntity, Class<E> editEntityClazz, M mapper, TracingService tracingService) {
     this.mapper = mapper;
@@ -87,10 +92,6 @@ public abstract class CrudView<F extends BaseFilterUI, L, E, M extends CrudMappe
     this.editEntityClazz = editEntityClazz;
     this.filters = new ArrayList<>();
     this.tracingService = tracingService;
-  }
-
-  public CrudView(Class<F> filterClazz, Class<L> listEntity, Class<E> editEntityClazz, M mapper) {
-    this(filterClazz, listEntity, editEntityClazz, mapper, null);
   }
 
   public abstract String getRoute();
@@ -292,7 +293,22 @@ public abstract class CrudView<F extends BaseFilterUI, L, E, M extends CrudMappe
   }
 
   protected void showDetails(E entity) {
+    try {
+      this.snapshotEntity = editEntityClazz.getDeclaredConstructor().newInstance();
+      System.out.println("Snapshotttttttttttttttttttt");
+      DeepCopyBeanUtils.copyProperties(entity, snapshotEntity);
+      test(entity, snapshotEntity);
+    } catch (NoSuchMethodException
+             | InvocationTargetException
+             | InstantiationException
+             | IllegalAccessException e) {
+      throw new SystemException("Failed to snapshot entity before editing", e);
+    }
     showDetails(createDetails(entity));
+  }
+
+  public void test(E entity, E snapshot) {
+
   }
 
   protected void showDetails(Component detailContent) {
@@ -333,9 +349,24 @@ public abstract class CrudView<F extends BaseFilterUI, L, E, M extends CrudMappe
 
   public abstract void onInit();
 
-  public abstract void onSave(E entity);
+  public void onSave(E entity) {
+    E after = save(entity);
+    TracingHelper.tracing(tracingService, "save", snapshotEntity, after);
+    test(entity, snapshotEntity);
+    detailsDrawer.hide();
+    reloadDataTable();
+  }
 
-  public abstract void onDelete(E entity);
+  protected abstract E save(E entity);
+
+  public void onDelete(E entity) {
+    delete(entity);
+    TracingHelper.tracing(tracingService, "delete", entity);
+    detailsDrawer.hide();
+    reloadDataTable();
+  }
+
+  protected abstract void delete(E entity);
 
   public abstract void onCancel();
 

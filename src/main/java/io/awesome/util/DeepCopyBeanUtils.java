@@ -59,6 +59,9 @@ public class DeepCopyBeanUtils {
     customConverters.put(
         Pair.of(TypedSet.class, SelectDto.class),
         new EnumSetToSelectDTOConverter(TypedSet.class, SelectDto.class, logger));
+    customConverters.put(Pair.of(SelectDto.class, SelectDto.class),
+            new SelectDTOToSelectDTOConverter(SelectDto.class, SelectDto.class, logger));
+
   }
 
   @Nullable
@@ -91,7 +94,9 @@ public class DeepCopyBeanUtils {
           if (readMethod != null) {
             ResolvableType sourceResolvableType = ResolvableType.forMethodReturnType(readMethod);
             ResolvableType targetResolvableType = ResolvableType.forMethodParameter(writeMethod, 0);
-            if (targetResolvableType.isAssignableFrom(sourceResolvableType)) {
+            if (targetResolvableType.isAssignableFrom(sourceResolvableType)
+                    && !customConverters.containsKey(
+                    Pair.of(readMethod.getReturnType(), writeMethod.getParameterTypes()[0]))) {
               try {
                 if (!Modifier.isPublic(readMethod.getDeclaringClass().getModifiers())) {
                   readMethod.setAccessible(true);

@@ -8,6 +8,13 @@ import java.lang.annotation.Target;
 
 @Target({ElementType.FIELD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Trace {
-    String name() default "service";
+public @interface TraceTag {
+    Type type() default Type.TAG;
+
+    boolean ignore() default false;
+
+    enum Type {
+        ID,
+        TAG
+    }
 }

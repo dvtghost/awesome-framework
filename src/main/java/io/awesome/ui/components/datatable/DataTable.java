@@ -15,8 +15,11 @@ import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import io.awesome.dto.PagingDto;
+import io.awesome.exception.SystemException;
+import io.awesome.helper.TracingHelper;
 import io.awesome.service.TracingService;
 import io.awesome.ui.annotations.Trace;
+import io.awesome.ui.annotations.TraceTag;
 import io.awesome.ui.components.FlexBoxLayout;
 import io.awesome.ui.components.GridComponent;
 import io.awesome.ui.components.collapse.Collapse;
@@ -30,15 +33,10 @@ import io.awesome.util.Utils;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.commons.beanutils.BeanUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.AnnotatedType;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -49,6 +47,7 @@ import java.util.function.Predicate;
  *
  * @param <T>
  */
+@Slf4j
 @CssImport("styles/components/data-table.css")
 public class DataTable<T> extends FlexBoxLayout {
   public static final int FIRST_PAGE_INDEX = 1;
@@ -232,82 +231,56 @@ public class DataTable<T> extends FlexBoxLayout {
     return menuBar;
   }
 
-  private void addAction(MenuItem item) {
+  private  void addAction(MenuItem item) {
     SubMenu subMenu = item.getSubMenu();
     subMenu.removeAll();
     if (hasActions()) {
       for (Action<T> action : actions) {
-        if (action.triggerSingleItem != null) {
-          this.grid.getSelectedItems().stream()
-              .findFirst()
-              .ifPresent(
-                  i -> {
-                    ComponentEventListener<ClickEvent<MenuItem>> listener =
-                        e -> {
-                          T before = null;
-                          try {
-                            before = (T) BeanUtils.cloneBean(i);
-                          } catch (IllegalAccessException
-                              | InstantiationException
-                              | InvocationTargetException
-                              | NoSuchMethodException ex) {
-                            System.out.println(ex);
-                          }
-                          T modifiedItem = action.triggerSingleItem.apply(i);
-
-                          Map<String, String> changedValues;
-                          if (before != null) {
-                            changedValues = getDifference(before, modifiedItem);
-                          } else {
-                            changedValues = new HashMap<>();
-                          }
-                          Class<?> entityClazz = i.getClass();
-                          for (Annotation annotation : entityClazz.getDeclaredAnnotations()) {
-                            if (annotation.annotationType() == Trace.class) {
-                              Trace trace = (Trace) annotation;
-                              tracingService.trace(
-                                      trace.name() + "_" + action.label, changedValues);
-                              break;
-                            }
-                          }
-                          this.grid.setItems(modifiedItem);
-                        };
-                    subMenu
-                        .addItem(action.label, listener)
-                        .setEnabled(action.enableSingleItem.test(i));
-                  });
-        } else {
-          ComponentEventListener<ClickEvent<MenuItem>> listener =
-              e -> action.triggerMultiItem.accept(this.grid.getSelectedItems());
-          subMenu
-              .addItem(action.label, listener)
-              .setEnabled(action.enableMultiItem.test(this.grid.getSelectedItems()));
+        Set<T> selectedItems =  this.grid.getSelectedItems();
+        ComponentEventListener<ClickEvent<MenuItem>> actionListener = e -> log.warn("Not implemented");
+        boolean enabled;
+        if (selectedItems.size() == 0) {
+          return;
         }
+        else if (selectedItems.size() == 1) {
+          T selectedItem =
+                  selectedItems.stream()
+                          .findAny()
+                          .orElseThrow(
+                                  () -> new SystemException("Failed to get a selected item from datatable"));
+          enabled = action.enableItem.test(selectedItem);
+          if (action.itemHandler != null) {
+            actionListener =
+                event -> {
+                  invokeActionWithTracing(action.label, action.itemHandler, selectedItem);
+                  this.grid.setItems(selectedItems);
+                  selectedItems.forEach(this.grid::select);
+                };
+          } else if (action.itemConsumer != null) {
+            actionListener = event -> action.itemConsumer.accept(selectedItem);
+          }
+        } else {
+          enabled = action.enableMultiItem.test(selectedItems);
+          actionListener = event -> {
+            invokeActionWithTracing(action.label, action.multiItemHandler, selectedItems);
+            this.grid.setItems(selectedItems);
+            selectedItems.forEach(this.grid::select);
+          };
+        }
+        subMenu
+                .addItem(action.label, actionListener)
+                .setEnabled(enabled);
       }
     } else {
       subMenu.addItem("No available").setEnabled(false);
     }
   }
 
-  private static Map<String, String> getDifference(Object before, Object after) {
-    Map<String, String> values = new HashMap<>();
-    for (Field field : before.getClass().getDeclaredFields()) {
-      field.setAccessible(true);
-      Object valueBefore;
-      Object valueAfter;
-      try {
-        valueBefore = field.get(before);
-        valueAfter = field.get(after);
-        if (valueBefore != null && valueAfter != null) {
-          if (!Objects.equals(valueBefore, valueAfter)) {
-            values.put(field.getName(), valueBefore + " -> " + valueAfter);
-          }
-        }
-      } catch (IllegalAccessException e) {
-        System.out.println(e);
-      }
-    }
-    return values;
+  private <E> E invokeActionWithTracing(String action, Function<E, E> actionHandler, E entity) {
+    E before = TracingHelper.clone(entity);
+    E after = actionHandler.apply(entity);
+    TracingHelper.tracing(tracingService, action, before, after);
+    return after;
   }
 
   private void reloadActionButton() {
@@ -366,19 +339,26 @@ public class DataTable<T> extends FlexBoxLayout {
   @AllArgsConstructor
   public static class Action<E> {
     private String label;
-    private Consumer<Set<E>> triggerMultiItem;
-    private Function<E, E> triggerSingleItem;
-    private Predicate<Set<E>> enableMultiItem;
-    private Predicate<E> enableSingleItem;
+    private Function<E, E> itemHandler;
+    private Consumer<E> itemConsumer;
+    private Predicate<E> enableItem;
 
-    public static <E> Action<E> singleItem(
-        String label, Function<E, E> triggerSingleItem, Predicate<E> enableSingleItem) {
-      return new Action<>(label, null, triggerSingleItem, null, enableSingleItem);
+    private Function<Collection<E>, Collection<E>> multiItemHandler;
+    private Predicate<Collection<E>> enableMultiItem;
+
+    public static <E> Action<E> item(
+        String label, Function<E, E> itemHandler, Predicate<E> enableItem) {
+      return new Action<>(label, itemHandler,  null, enableItem, null, null);
+    }
+
+    public static <E> Action<E> item(
+            String label, Consumer<E> itemConsumer, Predicate<E> enableItem) {
+      return new Action<>(label, null,  itemConsumer, enableItem, null, null);
     }
 
     public static <E> Action<E> multiItem(
-        String label, Consumer<Set<E>> triggerMultiItem, Predicate<Set<E>> enableMultiItem) {
-      return new Action<>(label, triggerMultiItem, null, enableMultiItem, null);
+        String label, Function<Collection<E>, Collection<E>> triggerMultiItem, Predicate<Collection<E>> enableMultiItem) {
+      return new Action<>(label, null, null,null, triggerMultiItem, enableMultiItem);
     }
   }
 }
