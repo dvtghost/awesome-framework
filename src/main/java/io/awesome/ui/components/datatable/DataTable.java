@@ -18,8 +18,6 @@ import io.awesome.dto.PagingDto;
 import io.awesome.exception.SystemException;
 import io.awesome.helper.TracingHelper;
 import io.awesome.service.TracingService;
-import io.awesome.ui.annotations.Trace;
-import io.awesome.ui.annotations.TraceTag;
 import io.awesome.ui.components.FlexBoxLayout;
 import io.awesome.ui.components.GridComponent;
 import io.awesome.ui.components.collapse.Collapse;
@@ -68,9 +66,10 @@ public class DataTable<T> extends FlexBoxLayout {
   }
 
   public DataTable(
-          Class<T> entityClazz,
-          String title,
-          final Function<Pageable, PagingDto<T>> recordsPerPageFnc, List<Action<T>> actions) {
+      Class<T> entityClazz,
+      String title,
+      final Function<Pageable, PagingDto<T>> recordsPerPageFnc,
+      List<Action<T>> actions) {
     this(entityClazz, title, recordsPerPageFnc, actions, null);
   }
 
@@ -85,7 +84,6 @@ public class DataTable<T> extends FlexBoxLayout {
     this.actions = actions;
     this.tracingService = tracingService;
     buildContent(entityClazz, title);
-
   }
 
   public void reload() {
@@ -231,23 +229,23 @@ public class DataTable<T> extends FlexBoxLayout {
     return menuBar;
   }
 
-  private  void addAction(MenuItem item) {
+  private void addAction(MenuItem item) {
     SubMenu subMenu = item.getSubMenu();
     subMenu.removeAll();
     if (hasActions()) {
       for (Action<T> action : actions) {
-        Set<T> selectedItems =  this.grid.getSelectedItems();
-        ComponentEventListener<ClickEvent<MenuItem>> actionListener = e -> log.warn("Not implemented");
+        Set<T> selectedItems = this.grid.getSelectedItems();
+        ComponentEventListener<ClickEvent<MenuItem>> actionListener =
+            e -> log.warn("Not implemented");
         boolean enabled;
         if (selectedItems.size() == 0) {
           return;
-        }
-        else if (selectedItems.size() == 1) {
+        } else if (selectedItems.size() == 1) {
           T selectedItem =
-                  selectedItems.stream()
-                          .findAny()
-                          .orElseThrow(
-                                  () -> new SystemException("Failed to get a selected item from datatable"));
+              selectedItems.stream()
+                  .findAny()
+                  .orElseThrow(
+                      () -> new SystemException("Failed to get a selected item from datatable"));
           enabled = action.enableItem.test(selectedItem);
           if (action.itemHandler != null) {
             actionListener =
@@ -261,15 +259,14 @@ public class DataTable<T> extends FlexBoxLayout {
           }
         } else {
           enabled = action.enableMultiItem.test(selectedItems);
-          actionListener = event -> {
-            invokeActionWithTracing(action.label, action.multiItemHandler, selectedItems);
-            this.grid.setItems(selectedItems);
-            selectedItems.forEach(this.grid::select);
-          };
+          actionListener =
+              event -> {
+                invokeActionWithTracing(action.label, action.multiItemHandler, selectedItems);
+                this.grid.setItems(selectedItems);
+                selectedItems.forEach(this.grid::select);
+              };
         }
-        subMenu
-                .addItem(action.label, actionListener)
-                .setEnabled(enabled);
+        subMenu.addItem(action.label, actionListener).setEnabled(enabled);
       }
     } else {
       subMenu.addItem("No available").setEnabled(false);
@@ -277,10 +274,8 @@ public class DataTable<T> extends FlexBoxLayout {
   }
 
   private <E> E invokeActionWithTracing(String action, Function<E, E> actionHandler, E entity) {
-    E before = TracingHelper.clone(entity);
-    E after = actionHandler.apply(entity);
-    TracingHelper.tracing(tracingService, action, before, after);
-    return after;
+    TracingHelper.tracing(tracingService, action, actionHandler, entity);
+    return entity;
   }
 
   private void reloadActionButton() {
@@ -348,17 +343,19 @@ public class DataTable<T> extends FlexBoxLayout {
 
     public static <E> Action<E> item(
         String label, Function<E, E> itemHandler, Predicate<E> enableItem) {
-      return new Action<>(label, itemHandler,  null, enableItem, null, null);
+      return new Action<>(label, itemHandler, null, enableItem, null, null);
     }
 
     public static <E> Action<E> item(
-            String label, Consumer<E> itemConsumer, Predicate<E> enableItem) {
-      return new Action<>(label, null,  itemConsumer, enableItem, null, null);
+        String label, Consumer<E> itemConsumer, Predicate<E> enableItem) {
+      return new Action<>(label, null, itemConsumer, enableItem, null, null);
     }
 
     public static <E> Action<E> multiItem(
-        String label, Function<Collection<E>, Collection<E>> triggerMultiItem, Predicate<Collection<E>> enableMultiItem) {
-      return new Action<>(label, null, null,null, triggerMultiItem, enableMultiItem);
+        String label,
+        Function<Collection<E>, Collection<E>> triggerMultiItem,
+        Predicate<Collection<E>> enableMultiItem) {
+      return new Action<>(label, null, null, null, triggerMultiItem, enableMultiItem);
     }
   }
 }

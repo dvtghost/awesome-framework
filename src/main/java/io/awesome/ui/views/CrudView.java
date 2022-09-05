@@ -51,7 +51,6 @@ import org.springframework.data.domain.Pageable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static io.awesome.constant.SessionActions.EDIT_ENTITY;
 import static io.awesome.constant.SessionActions.NEW_ENTITY;
@@ -62,9 +61,9 @@ public abstract class CrudView<F extends BaseFilterUI, L, E, M extends CrudMappe
   public static final int FIRST_PAGE_INDEX = 1;
   public static final int PAGE_LIMIT = 10;
   protected final M mapper;
+  protected final Class<E> editEntityClazz;
   private final Logger logger = LoggerFactory.getLogger(CrudView.class);
   private final Class<F> filterClazz;
-  protected final Class<E> editEntityClazz;
   private final Class<L> listEntityClazz;
   private final List<FilterDto> filters;
   @Getter @Setter protected GridComponent<L> grid;
@@ -85,7 +84,12 @@ public abstract class CrudView<F extends BaseFilterUI, L, E, M extends CrudMappe
   @Getter @Setter private Map<String, L> items = new HashMap<>();
   private E snapshotEntity;
 
-  public CrudView(Class<F> filterClazz, Class<L> listEntity, Class<E> editEntityClazz, M mapper, TracingService tracingService) {
+  public CrudView(
+      Class<F> filterClazz,
+      Class<L> listEntity,
+      Class<E> editEntityClazz,
+      M mapper,
+      TracingService tracingService) {
     this.mapper = mapper;
     this.filterClazz = filterClazz;
     this.listEntityClazz = listEntity;
@@ -262,7 +266,8 @@ public abstract class CrudView<F extends BaseFilterUI, L, E, M extends CrudMappe
   protected List<Component> createContents() {
     List<DataTable.Action<L>> actions = dataTableActions();
     this.dataTable =
-        new DataTable<L>(listEntityClazz, getTableTitle(), this::getPagingData, actions, tracingService);
+        new DataTable<L>(
+            listEntityClazz, getTableTitle(), this::getPagingData, actions, tracingService);
     this.dataTable.setPageLimit(PAGE_LIMIT);
     this.dataTable.addSelectCallback(this::selectCallBack);
     this.dataTable.addSelectMultiCallback(this::selectMultiCallBack);
@@ -295,20 +300,14 @@ public abstract class CrudView<F extends BaseFilterUI, L, E, M extends CrudMappe
   protected void showDetails(E entity) {
     try {
       this.snapshotEntity = editEntityClazz.getDeclaredConstructor().newInstance();
-      System.out.println("Snapshotttttttttttttttttttt");
       DeepCopyBeanUtils.copyProperties(entity, snapshotEntity);
-      test(entity, snapshotEntity);
     } catch (NoSuchMethodException
-             | InvocationTargetException
-             | InstantiationException
-             | IllegalAccessException e) {
+        | InvocationTargetException
+        | InstantiationException
+        | IllegalAccessException e) {
       throw new SystemException("Failed to snapshot entity before editing", e);
     }
     showDetails(createDetails(entity));
-  }
-
-  public void test(E entity, E snapshot) {
-
   }
 
   protected void showDetails(Component detailContent) {
@@ -350,9 +349,7 @@ public abstract class CrudView<F extends BaseFilterUI, L, E, M extends CrudMappe
   public abstract void onInit();
 
   public void onSave(E entity) {
-    E after = save(entity);
-    TracingHelper.tracing(tracingService, "save", snapshotEntity, after);
-    test(entity, snapshotEntity);
+    TracingHelper.tracing(tracingService, "save", this::save, entity, snapshotEntity);
     detailsDrawer.hide();
     reloadDataTable();
   }
@@ -360,8 +357,7 @@ public abstract class CrudView<F extends BaseFilterUI, L, E, M extends CrudMappe
   protected abstract E save(E entity);
 
   public void onDelete(E entity) {
-    delete(entity);
-    TracingHelper.tracing(tracingService, "delete", entity);
+    TracingHelper.tracing(tracingService, "delete", this::delete, entity);
     detailsDrawer.hide();
     reloadDataTable();
   }
