@@ -17,6 +17,9 @@ import java.util.function.Function;
 
 @Slf4j
 public class TracingHelper {
+
+  private static final String EMPTY_ID = "empty";
+
   public static <E> E clone(E entity) {
     E before = null;
     try {
@@ -62,15 +65,15 @@ public class TracingHelper {
     for (Annotation annotation : entityClazz.getDeclaredAnnotations()) {
       if (annotation.annotationType() == Trace.class) {
         Trace trace = (Trace) annotation;
-        final String operatorName = trace.name() + "_" + action.toLowerCase();
+        final String operationName = trace.name() + "_" + action.toLowerCase();
         Map<String, String> tags = new HashMap<>();
 
         tracingService.trace(
-            operatorName,
+                operationName,
             tags,
             () ->
                 invokeChangeValueFunc(
-                    changeValueFunc, entity, snapshot, entityClazz, trace, operatorName));
+                    changeValueFunc, entity, snapshot, entityClazz, trace, operationName));
         break;
       }
     }
@@ -82,19 +85,21 @@ public class TracingHelper {
       E snapshot,
       Class<?> entityClazz,
       Trace trace,
-      String operatorName) {
-    E before = snapshot;
+      String operationName) {
+    final E before;
     if (snapshot == null) {
       before = TracingHelper.clone(entity);
+    } else {
+      before = snapshot;
     }
     E after = changeValueFunc.apply(entity);
     Map<String, String> changedValues = ObjectHelper.getDifference(before, after);
-    changedValues.put("tracing_operator", operatorName);
+    changedValues.put("tracing_operation", operationName);
     for (Field field : entityClazz.getDeclaredFields()) {
       if (field.isAnnotationPresent(TraceTag.class)) {
         TraceTag traceTag = field.getAnnotation(TraceTag.class);
         if (traceTag.type() == TraceTag.Type.ID) {
-          changedValues.computeIfAbsent(trace.name() + "_id", k -> getFieldValue(field, after));
+          extractTraceTagID(trace, before, after, changedValues, field);
         } else if (traceTag.ignore()) {
           changedValues.remove(field.getName());
         }
@@ -103,13 +108,23 @@ public class TracingHelper {
     return changedValues;
   }
 
+  private static <E> void extractTraceTagID(
+      Trace trace, E before, E after, Map<String, String> changedValues, Field field) {
+    if (after != null) {
+      changedValues.computeIfAbsent(trace.name() + "_id", k -> getFieldValue(field, after));
+    } else {
+      changedValues.computeIfAbsent(trace.name() + "_id", k -> getFieldValue(field, before));
+    }
+  }
+
   private static <E> String getFieldValue(Field field, E object) {
-    String value = "";
+    String value;
     try {
       field.setAccessible(true);
       value = String.valueOf(field.get(object));
-    } catch (IllegalAccessException e) {
+    } catch (Exception e) {
       log.warn("Failed to tag ID of field " + field.getName(), e);
+      value = EMPTY_ID;
     }
     return value;
   }
